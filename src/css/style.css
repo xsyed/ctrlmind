@@ -7,7 +7,6 @@
 
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
   color: #333;
 }
@@ -21,13 +20,8 @@ body {
 /* Header */
 header {
   text-align: center;
-  color: white;
   margin-bottom: 30px;
   padding: 20px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 15px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
 header h1 {
@@ -44,17 +38,14 @@ header p {
 /* Main Content Layout */
 .main-content {
   display: grid;
-  grid-template-columns: 1fr 350px;
+  grid-template-columns: 1fr;
   gap: 20px;
   margin-bottom: 20px;
 }
 
 /* Brain Container */
 .brain-container {
-  background: white;
   padding: 30px;
-  border-radius: 15px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -65,9 +56,6 @@ header p {
   max-width: 600px;
   margin: 0 auto;
   padding: 0px;
-  background: #f8f9fa;
-  border-radius: 10px;
-  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 #brain-svg-container svg {

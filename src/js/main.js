@@ -26,10 +26,7 @@ class BrainSelector {
       
       this.setupEventListeners();
       
-      // Initialize UI
-      this.updateLegend();
-      this.populateAllRegionsList();
-      
+
       console.log('Brain Selector initialized successfully!');
     } catch (error) {
       console.error('Error initializing Brain Selector:', error);
@@ -73,12 +70,12 @@ class BrainSelector {
     regions
       .on('click', (event, d) => {
         const region = d3.select(event.currentTarget);
-        const regionId = region.attr('data-region');
+        const regionId = region.attr('id');
         this.toggleRegion(regionId, region);
       })
       .on('mouseenter', (event) => {
         const region = d3.select(event.currentTarget);
-        const regionId = region.attr('data-region');
+        const regionId = region.attr('id');
         const regionName = region.attr('data-name');
         // this.showTooltip(event, regionId, regionName);
       })
@@ -105,10 +102,10 @@ class BrainSelector {
     this.saveSelections();
     
     // Update UI
-    this.updateLegend();
+    // this.updateLegend();
     
     // Add animation feedback
-    this.animateSelection(regionElement);
+    // this.animateSelection(regionElement);
   }
 
   animateSelection(element) {
@@ -163,7 +160,7 @@ class BrainSelector {
         
         // Apply selected class to regions
         selectionsArray.forEach(regionId => {
-          const region = this.svg.select(`[data-region="${regionId}"]`);
+          const region = this.svg.select(`[id="${regionId}"]`);
           if (!region.empty()) {
             region.classed(SELECTED_CLASS, true);
           }
@@ -176,74 +173,7 @@ class BrainSelector {
     }
   }
 
-  updateLegend() {
-    const selectedList = d3.select('#selected-regions-list');
-    
-    if (this.selectedRegions.size === 0) {
-      selectedList.html('<p class="empty-message">No regions selected yet. Click on the brain!</p>');
-      return;
-    }
-    
-    // Create list items for selected regions
-    const items = selectedList
-      .selectAll('.selected-item')
-      .data(Array.from(this.selectedRegions), d => d);
-    
-    // Remove old items
-    items.exit()
-      .transition()
-      .duration(300)
-      .style('opacity', 0)
-      .remove();
-    
-    // Add new items
-    const newItems = items.enter()
-      .append('div')
-      .attr('class', 'selected-item')
-      .style('opacity', 0);
-    
-    newItems.append('span')
-      .attr('class', 'region-name');
-    
-    newItems.append('button')
-      .attr('class', 'remove-btn')
-      .text('×')
-      .on('click', (event, regionId) => {
-        const region = this.svg.select(`[data-region="${regionId}"]`);
-        this.toggleRegion(regionId, region);
-      });
-    
-    // Update all items
-    const allItems = newItems.merge(items);
-    
-    allItems.select('.region-name')
-      .text(d => {
-        const metadata = this.regionsMap.get(d);
-        return metadata ? metadata.name : d;
-      });
-    
-    allItems
-      .transition()
-      .duration(300)
-      .style('opacity', 1);
-  }
 
-  populateAllRegionsList() {
-    const list = d3.select('#all-regions-list');
-    
-    regionsData.regions.forEach(region => {
-      list.append('li')
-        .text(region.name)
-        .attr('title', region.description)
-        .on('click', () => {
-          // Scroll to and highlight region in SVG
-          const regionElement = this.svg.select(`[data-region="${region.id}"]`);
-          if (!regionElement.empty()) {
-            this.highlightRegion(regionElement);
-          }
-        });
-    });
-  }
 
   highlightRegion(regionElement) {
     // Temporarily highlight the region
@@ -268,9 +198,6 @@ class BrainSelector {
     
     // Clear localStorage
     localStorage.removeItem(STORAGE_KEY);
-    
-    // Update UI
-    this.updateLegend();
     
     console.log('All selections reset');
   }
