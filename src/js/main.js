@@ -1,7 +1,5 @@
 import * as d3 from 'd3';
 
-import regionsData from '../data/regions.json';
-
 // Constants
 const STORAGE_KEY = 'brain-selected-regions';
 const SELECTED_CLASS = 'selected';
@@ -18,7 +16,6 @@ class BrainSelector {
 
   async init() {
     try {
-      this.loadRegionsMetadata();
       
       await this.loadSVG();
       
@@ -33,12 +30,6 @@ class BrainSelector {
     }
   }
 
-  loadRegionsMetadata() {
-    // Create a map of region ID to metadata
-    regionsData.regions.forEach(region => {
-      this.regionsMap.set(region.id, region);
-    });
-  }
 
   async loadSVG() {
     try {
@@ -203,22 +194,51 @@ class BrainSelector {
   }
 
   setupEventListeners() {
-    // Reset button
-    d3.select('#reset-btn').on('click', () => {
-      if (confirm('Are you sure you want to reset all selections?')) {
-        this.resetSelections();
+    // Fail button - Reset all selections
+    d3.select('#fail-btn').on('click', () => {
+      this.resetSelections();
+    });
+    
+    // Done button - Toggle one random unselected region
+    d3.select('#done-btn').on('click', () => {
+      this.toggleRandomRegion();
+    });
+  }
+
+  toggleRandomRegion() {
+    // Get all brain regions
+    const allRegions = this.svg.selectAll('.brain-region');
+    const allRegionIds = [];
+    
+    // Collect all region IDs
+    allRegions.each(function() {
+      const regionId = d3.select(this).attr('id');
+      if (regionId) {
+        allRegionIds.push(regionId);
       }
     });
     
-    // Toggle legend button
-    d3.select('#toggle-legend-btn').on('click', () => {
-      const legendPanel = d3.select('#legend-panel');
-      const isHidden = legendPanel.classed('hidden');
-      legendPanel.classed('hidden', !isHidden);
-      
-      d3.select('#toggle-legend-btn')
-        .text(isHidden ? 'Hide Legend' : 'Show Legend');
-    });
+    // Filter out already selected regions
+    const unselectedRegions = allRegionIds.filter(id => !this.selectedRegions.has(id));
+    
+    // Check if there are any unselected regions
+    if (unselectedRegions.length === 0) {
+      console.log('All regions are already selected!');
+      // Optional: Show a message to the user
+      alert('All brain regions are already selected! 🎉');
+      return;
+    }
+    
+    // Pick a random unselected region
+    const randomIndex = Math.floor(Math.random() * unselectedRegions.length);
+    const randomRegionId = unselectedRegions[randomIndex];
+    
+    // Get the region element and toggle it
+    const regionElement = this.svg.select(`[id="${randomRegionId}"]`);
+    if (!regionElement.empty()) {
+      this.toggleRegion(randomRegionId, regionElement);
+      console.log(`Randomly selected region: ${randomRegionId}`);
+    }
   }
 }
 

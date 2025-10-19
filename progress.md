@@ -3,9 +3,122 @@
 ## Project Overview
 **Project:** Interactive Brain SVG Selector  
 **Started:** October 18, 2025  
-**Status:** Complete - Ready for Testing  
+**Status:** Active Development - Button Redesign Complete  
+**Last Updated:** October 19, 2025
 
 ---
+
+## Current Task: Button Redesign and Functionality Update
+
+### Approach
+We're replacing the existing control buttons with new functionality focused on gamification:
+- **Fail Button**: Resets all selections (removes all regions from localStorage)
+- **Done Button**: Randomly selects one unselected brain region
+
+The buttons are styled with a jelly/bubbly aesthetic using:
+- Rounded pill-shaped buttons (border-radius: 50px)
+- Gradient backgrounds with specified color schemes
+- Jelly animation on click using CSS keyframes
+- Hover effects with scale transformations and shadow enhancements
+- Ripple effect using CSS ::before pseudo-element
+
+### Steps Completed
+
+#### 1. HTML Updates (`index.html`)
+- ✅ Replaced `#reset-btn` with `#fail-btn`
+- ✅ Replaced `#toggle-legend-btn` with `#done-btn`
+- ✅ Updated button text to "Fail" and "Done"
+
+#### 2. CSS Styling (`src/css/style.css`)
+- ✅ Created `.btn-done` class with green gradient (#7AB83F base color)
+  - Gradient: `linear-gradient(135deg, #7AB83F 0%, #9AD663 100%)`
+  - Hover effect with lighter gradient and glow shadow
+- ✅ Created `.btn-fail` class with red gradient (#D51314 base color)
+  - Gradient: `linear-gradient(135deg, #D51314 0%, #F03134 100%)`
+  - Hover effect with lighter gradient and glow shadow
+- ✅ Enhanced base `.btn` class with jelly/bubbly effects:
+  - Increased padding (18px 36px)
+  - Rounded pill shape (border-radius: 50px)
+  - Enhanced shadows (0 8px 15px)
+  - Cubic-bezier easing for smooth animations
+  - Added `@keyframes jelly` animation with squash/stretch effect
+  - Added ripple effect using ::before pseudo-element
+  - Uppercase text with letter-spacing
+- ✅ Hover states with scale (1.05) and translateY (-5px)
+- ✅ Active states trigger jelly animation
+
+#### 3. JavaScript Functionality (`src/js/main.js`)
+- ✅ Updated `setupEventListeners()` method:
+  - Removed old reset button and toggle legend button listeners
+  - Added `#fail-btn` listener that calls `resetSelections()`
+  - Added `#done-btn` listener that calls new `toggleRandomRegion()` method
+  - Removed confirmation dialog for fail button (direct reset)
+- ✅ Implemented new `toggleRandomRegion()` method:
+  - Collects all brain region IDs from the SVG
+  - Filters out already selected regions
+  - Handles edge case when all regions are selected (shows alert)
+  - Randomly picks one unselected region using `Math.random()`
+  - Calls existing `toggleRegion()` to apply selection
+  - Logs selected region to console
+
+### Current Implementation Details
+
+**Done Button Logic:**
+1. Query all `.brain-region` elements in SVG
+2. Build array of all region IDs
+3. Filter to get only unselected regions (not in `this.selectedRegions` Set)
+4. If no unselected regions exist, show alert and return
+5. Generate random index: `Math.floor(Math.random() * unselectedRegions.length)`
+6. Select the region element using D3.js
+7. Call `toggleRegion()` with the region ID and element
+
+**Fail Button Logic:**
+- Directly calls existing `resetSelections()` method
+- Clears the `selectedRegions` Set
+- Removes `.selected` class from all SVG regions
+- Removes data from localStorage using key `'brain-selected-regions'`
+
+### CSS Animation Breakdown
+
+**Jelly Animation:**
+```
+0%, 100%: scale(0.98) - slightly compressed
+25%: scale(1.05, 0.95) - horizontally stretched, vertically compressed
+50%: scale(0.95, 1.05) - vertically stretched, horizontally compressed
+75%: scale(1.02, 0.98) - slight horizontal stretch
+```
+
+**Ripple Effect:**
+- Uses ::before pseudo-element at button center
+- Expands from 0 to 300px diameter on hover
+- Semi-transparent white overlay (rgba(255, 255, 255, 0.3))
+
+### Color Schemes Applied
+- **Done Button**: #7AB83F (green) with lighter #9AD663 gradient
+- **Fail Button**: #D51314 (red) with lighter #F03134 gradient
+- Both include matching shadow glows on hover
+
+### Files Modified
+1. `/Users/sami/Documents/nnn/index.html`
+2. `/Users/sami/Documents/nnn/src/css/style.css`
+3. `/Users/sami/Documents/nnn/src/js/main.js`
+
+### Testing Needed
+- [ ] Verify Done button randomly selects unselected regions
+- [ ] Test edge case: all regions already selected
+- [ ] Verify Fail button clears all selections
+- [ ] Test button animations in browser
+- [ ] Check responsive behavior on mobile devices
+
+### Notes
+- No confirmation dialog for Fail button (immediate reset)
+- Alert shown when Done is clicked but all regions are selected
+- Jelly animation provides satisfying tactile feedback
+- Gradients provide depth and modern aesthetic
+
+---
+
+## Previous Work
 
 ## Approach
 
@@ -47,6 +160,8 @@ We're building a 100% client-side interactive brain visualization tool using:
    - Each path has `data-region` and `data-name` attributes
    - Built-in CSS for base styling
    - Regions: Frontal Lobe, Parietal Lobe, Temporal Lobe, Occipital Lobe, Cerebellum, Brain Stem, Motor Cortex, Prefrontal Cortex
+
+```
 
 4. Created `regions.json`:
    - Metadata for all 8 brain regions
