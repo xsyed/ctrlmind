@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🧠 CtrlMind</title>
+  <link rel="stylesheet" href="/src/css/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🧠 CtrlMind</h1>
+      <p>Rewire. Refocus. Rise.</p>
+    </header>
+
+    <div class="main-content">
+      <!-- Brain SVG Container -->
+      <div class="brain-container">
+        <div id="brain-svg-container"></div>
+        
+        <!-- Controls -->
+        <div class="controls">
+          <button id="reset-btn" class="btn btn-danger">Reset All Selections</button>
+          <button id="toggle-legend-btn" class="btn btn-secondary">Toggle Legend</button>
+        </div>
+      </div>
+
+      <!-- Side Legend -->
+      <!-- <aside class="legend-panel" id="legend-panel">
+        <h2>Selected Regions</h2>
+        <div id="selected-regions-list" class="selected-list">
+          <p class="empty-message">No regions selected yet. Click on the brain!</p>
+        </div>
+        
+        <div class="legend-info">
+          <h3>All Brain Regions:</h3>
+          <ul id="all-regions-list" class="regions-list"></ul>
+        </div>
+      </aside> -->
+    </div>
+
+    <!-- Tooltip Container (for custom tooltips) -->
+    <!-- <div id="tooltip" class="tooltip" style="display: none;"></div> -->
+  </div>
+
+  <script type="module" src="/src/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "name": "CtrlMind",
+  "version": "1.0.0",
+  "description": "CtrlMind - Rewire. Refocus. Rise.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "brain",
+    "svg",
+    "d3",
+    "interactive",
+    "neuroscience"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^5.0.0"
+  },
+  "dependencies": {
+    "d3": "^7.8.5",
+    "tippy.js": "^6.3.7"
+  }
+}

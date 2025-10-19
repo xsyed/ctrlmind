@@ -1,0 +1,52 @@
+{
+  "regions": [
+    {
+      "id": "frontal-lobe",
+      "name": "Frontal Lobe",
+      "description": "Responsible for reasoning, planning, parts of speech, movement, emotions, and problem solving",
+      "functions": ["Decision making", "Problem solving", "Motor control", "Speech production"]
+    },
+    {
+      "id": "parietal-lobe",
+      "name": "Parietal Lobe",
+      "description": "Processes sensory information about the surrounding world",
+      "functions": ["Spatial awareness", "Touch perception", "Navigation", "Body awareness"]
+    },
+    {
+      "id": "temporal-lobe",
+      "name": "Temporal Lobe",
+      "description": "Processes auditory information and encodes memory",
+      "functions": ["Hearing", "Memory formation", "Language comprehension", "Emotional responses"]
+    },
+    {
+      "id": "occipital-lobe",
+      "name": "Occipital Lobe",
+      "description": "Primary visual processing center of the brain",
+      "functions": ["Visual processing", "Color recognition", "Object recognition", "Distance perception"]
+    },
+    {
+      "id": "cerebellum",
+      "name": "Cerebellum",
+      "description": "Coordinates voluntary movements and maintains balance",
+      "functions": ["Balance", "Coordination", "Motor learning", "Posture"]
+    },
+    {
+      "id": "brain-stem",
+      "name": "Brain Stem",
+      "description": "Controls basic life functions like breathing and heart rate",
+      "functions": ["Breathing", "Heart rate", "Blood pressure", "Arousal"]
+    },
+    {
+      "id": "motor-cortex",
+      "name": "Motor Cortex",
+      "description": "Controls voluntary muscle movements",
+      "functions": ["Voluntary movement", "Motor planning", "Fine motor skills"]
+    },
+    {
+      "id": "prefrontal-cortex",
+      "name": "Prefrontal Cortex",
+      "description": "Handles complex cognitive behavior and decision making",
+      "functions": ["Executive functions", "Personality expression", "Social behavior", "Concentration"]
+    }
+  ]
+}
