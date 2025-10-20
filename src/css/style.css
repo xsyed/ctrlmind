@@ -153,6 +153,38 @@ header p {
  fill: #94C45E;
 }
 
+.br-6:hover {
+  fill: #EE81A7;
+  stroke: #D76096;
+  stroke-width: 3;
+}
+
+.br-6.selected {
+  fill: #EE81A7;
+  stroke: #D76096;
+  stroke-width: 3;
+}
+
+.br-6.selected:hover {
+  fill: #EE81A7;
+}
+
+.br-7:hover {
+  fill: #9983BB;
+  stroke: #7662A3;
+  stroke-width: 3;
+}
+
+.br-7.selected {
+  fill: #9983BB;
+  stroke: #7662A3;
+  stroke-width: 3;
+}
+
+.br-7.selected:hover {
+  fill: #9983BB;
+}
+
 /* Controls */
 .controls {
   margin-top: 50px;
