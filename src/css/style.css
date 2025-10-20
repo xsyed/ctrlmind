@@ -216,7 +216,16 @@ header p {
   border-color: #000;
 }
 
-.btn-done:hover {
+/* Only apply hover on devices that support hover (not touch devices) */
+@media (hover: hover) {
+  .btn-done:hover {
+    color: #5AA332;
+    border-color: #5AA332;
+  }
+}
+
+/* Active state for touch feedback on mobile */
+.btn-done:active {
   color: #5AA332;
   border-color: #5AA332;
 }
@@ -225,7 +234,16 @@ header p {
   border-color: #000;
 }
 
-.btn-fail:hover {
+/* Only apply hover on devices that support hover (not touch devices) */
+@media (hover: hover) {
+  .btn-fail:hover {
+    color: #ff0000;
+    border-color: #ff0000;
+  }
+}
+
+/* Active state for touch feedback on mobile */
+.btn-fail:active {
   color: #ff0000;
   border-color: #ff0000;
 }
@@ -404,8 +422,12 @@ footer {
 }
 
 @media (max-width: 768px) {
-  body {
-    padding-bottom: 100px; /* Space for fixed controls at bottom */
+  /* Prevent all scrolling on mobile */
+  html, body {
+    overflow: hidden;
+    height: 100vh;
+    position: fixed;
+    width: 100%;
   }
 
   header h1 {
@@ -416,21 +438,24 @@ footer {
     padding: 10px 10px;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
   }
 
   .main-content {
     display: flex;
     flex-direction: column;
     flex: 1;
+    overflow: hidden; /* Prevent scrolling on main-content */
   }
 
   .brain-container {
-    padding: 20px 10px;
+    padding: 0px !important;
     flex: 1;
     display: flex;
     flex-direction: column;
     justify-content: center;
+    overflow: hidden; /* Prevent scrolling on brain-container */
   }
 
   #brain-svg-container {
