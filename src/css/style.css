@@ -105,6 +105,54 @@ header p {
   fill: #5ec1d6;
 }
 
+.br-3:hover {
+  fill: #c17398;
+  stroke: #aa5383;
+  stroke-width: 3;
+}
+
+.br-3.selected {
+  fill: #c17398;
+  stroke: #aa5383;
+  stroke-width: 3;
+}
+
+.br-3.selected:hover {
+  fill: #c17398;
+}
+
+.br-4:hover {
+  fill: #EAE33D;
+  stroke: #D7BD1F;
+  stroke-width: 3;
+}
+
+.br-4.selected {
+  fill: #EAE33D;
+  stroke: #D7BD1F;
+  stroke-width: 3;
+}
+
+.br-4.selected:hover {
+  fill: #EAE33D;
+}
+
+.br-5:hover {
+  fill: #94C45E;
+  stroke: #5AA332;
+  stroke-width: 3;
+}
+
+.br-5.selected {
+ fill: #94C45E;
+  stroke: #5AA332;
+  stroke-width: 3;
+}
+
+.br-5.selected:hover {
+ fill: #94C45E;
+}
+
 /* Controls */
 .controls {
   margin-top: 50px;
