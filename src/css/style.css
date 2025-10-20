@@ -65,7 +65,7 @@ header p {
 
 /* Brain Region Styles */
 .brain-region {
-  fill: #e0e0e0;
+  fill: white;
   stroke: #333;
   stroke-width: 2;
   cursor: pointer;
@@ -73,30 +73,36 @@ header p {
 }
 
 .br-1:hover {
-  fill: #ffd700;
+  fill: #F1938C;
   stroke: #ff6b6b;
   stroke-width: 3;
-  filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6));
 }
 
 .br-1.selected {
   fill: #F1938C;
   stroke: #E26F6F;
   stroke-width: 3;
-  animation: pulse 2s infinite;
 }
 
 .br-1.selected:hover {
   fill: #F1938C;
 }
 
-@keyframes pulse {
-  0%, 100% {
-    /* filter: drop-shadow(0 0 5px rgba(76, 175, 80, 0.5)); */
-  }
-  50% {
-    /* filter: drop-shadow(0 0 15px rgba(76, 175, 80, 0.8)); */
-  }
+
+.br-2:hover {
+  fill: #5ec1d6;
+  stroke: #3fa7bf;
+  stroke-width: 3;
+}
+
+.br-2.selected {
+  fill: #5ec1d6;
+  stroke: #3fa7bf;
+  stroke-width: 3;
+}
+
+.br-2.selected:hover {
+  fill: #5ec1d6;
 }
 
 /* Controls */
