@@ -73,7 +73,7 @@ header p {
 
 /* Brain Region Styles */
 .brain-region {
-  fill: white;
+  fill: #e0e0e0;
   stroke: #333;
   stroke-width: 2;
   cursor: pointer;

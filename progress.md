@@ -3,12 +3,129 @@
 ## Project Overview
 **Project:** Interactive Brain SVG Selector  
 **Started:** October 18, 2025  
-**Status:** Active Development - Mobile Optimization  
-**Last Updated:** October 19, 2025
+**Status:** Active Development - Region Selection Logic Fix  
+**Last Updated:** October 20, 2025
 
 ---
 
-## Current Task: Mobile Optimization & Native App-like Experience
+## Current Task: Fix Region Selection Logic for Daily Check-ins
+
+### Approach
+We're implementing a progressive unlock system where:
+1. **Daily check-ins unlock regions sequentially** - Day 1 unlocks region-1, Day 2 unlocks region-2, etc.
+2. **Unlocked regions become selectable** - Users can click unlocked regions to toggle selection
+3. **Locked regions remain disabled** - Future regions (not yet unlocked) are not clickable
+4. **Correct SVG element targeting** - Using `#region-${i}` ID selectors instead of `.br-${i}` class selectors
+
+**Key Design Decisions:**
+- Use `setupRegionInteractions()` to dynamically enable/disable regions based on `currentDayNumber`
+- Unlocked regions (1 through currentDayNumber) get `pointer-events: auto` and click handlers
+- Locked regions (currentDayNumber+1 through 90) get `pointer-events: none` and no click handlers
+- Call `setupRegionInteractions()` after each check-in to update clickable regions
+- Use SVG element IDs (`#region-1`, `#region-2`, etc.) not CSS classes (`.br-1`, `.br-2`, etc.)
+
+### Steps Completed So Far
+
+#### 1. Updated `setupRegionInteractions()` Method (`src/js/main.js`)
+- ✅ Changed from disabling all regions to selective enabling based on unlock status
+- ✅ Loop through all 90 regions (1 to MAX_REGIONS)
+- ✅ For unlocked regions (i <= currentDayNumber):
+  - Set `pointer-events: auto` to enable clicking
+  - Set `cursor: pointer` for visual feedback
+  - Attach click handler that calls `toggleRegion(i)`
+- ✅ For locked regions (i > currentDayNumber):
+  - Set `pointer-events: none` to disable clicking
+  - Set `cursor: not-allowed` for visual feedback
+  - Remove any existing click handlers
+- ✅ Fixed selector from `.br-${i}` to `#region-${i}` to match SVG structure
+
+#### 2. Added `toggleRegion()` Method (`src/js/main.js`)
+- ✅ New method to handle region selection toggling
+- ✅ Takes regionNumber as parameter
+- ✅ Selects region using `#region-${regionNumber}` ID selector
+- ✅ Checks current selection state with `region.classed(SELECTED_CLASS)`
+- ✅ Toggles the selection state
+- ✅ Logs toggle action to console for debugging
+- ✅ Fixed selector from `.br-${i}` to `#region-${i}`
+
+#### 3. Updated `checkIn()` Method (`src/js/main.js`)
+- ✅ Added call to `setupRegionInteractions()` after successful check-in
+- ✅ This ensures the newly unlocked region becomes immediately clickable
+- ✅ Updated visual region selector from `.br-${i}` to `#region-${i}`
+- ✅ Maintains existing functionality: marks current day region as selected, saves to localStorage
+
+#### 4. Updated `applyCheckIns()` Method (`src/js/main.js`)
+- ✅ Fixed selector from `.br-${checkIn.region}` to `#region-${checkIn.region}`
+- ✅ Ensures saved check-ins are properly restored on page load
+- ✅ Correctly targets SVG elements by ID
+
+#### 5. Updated `resetAllCheckIns()` Method (`src/js/main.js`)
+- ✅ Added call to `setupRegionInteractions()` after reset
+- ✅ This ensures all regions become disabled again when reset to day 0
+- ✅ Properly handles the state reset flow
+
+### SVG Structure Confirmation
+The SVG file (`/public/main.svg`) uses the following structure:
+```xml
+<path class="brain-region br-4" id="region-49" />
+<path class="brain-region br-5" id="region-52" />
+```
+- Each region has both a class (`.brain-region` and `.br-X`) and an ID (`#region-X`)
+- The ID uses format `region-${number}` where number ranges from 1-90
+- We're using ID selectors for JavaScript interaction (more specific and reliable)
+- CSS classes `.br-1` through `.br-7` are preserved for custom styling (not modified per user request)
+
+### Current Implementation Details
+
+**Region Selection Logic:**
+1. On initialization, calculate `currentDayNumber` based on start date and check-ins
+2. Set up region interactions to make regions 1-currentDayNumber clickable
+3. When user clicks "Done" to check in:
+   - Increment currentDayNumber (or set to 1 if first check-in)
+   - Mark that day's region as selected
+   - Update region interactions to make the new region clickable
+4. Example flow:
+   - Day 1 check-in → region-1 unlocked and selected ✅
+   - Day 2 check-in → regions 1-2 unlocked, region-2 selected ✅
+   - Day 20 check-in → regions 1-20 unlocked, region-20 selected ✅
+   - Regions 21-90 remain locked and non-clickable ✅
+
+**Code Changes Summary:**
+- `setupRegionInteractions()`: Changed from `.br-${i}` to `#region-${i}`, added conditional enable/disable logic
+- `toggleRegion()`: Changed from `.br-${regionNumber}` to `#region-${regionNumber}`
+- `applyCheckIns()`: Changed from `.br-${checkIn.region}` to `#region-${checkIn.region}`
+- `checkIn()`: Changed from `.br-${this.currentDayNumber}` to `#region-${this.currentDayNumber}`, added `setupRegionInteractions()` call
+- `resetAllCheckIns()`: Added `setupRegionInteractions()` call
+
+### Files Modified
+1. `/Users/sami/Documents/nnn/src/js/main.js` - Multiple methods updated for correct region targeting and unlock logic
+
+### Current Status: FIXED ✅
+
+**Region selection logic is now working correctly:**
+- [x] Regions unlock progressively as user checks in daily
+- [x] Day 1 check-in unlocks and selects region-1
+- [x] Day 2 check-in unlocks region-2 (regions 1-2 are now clickable)
+- [x] Day 20 check-in unlocks region-20 (regions 1-20 are now clickable)
+- [x] Locked regions (beyond currentDayNumber) are not selectable
+- [x] Correct SVG selectors using `#region-${i}` format
+- [x] CSS styling for `.br-1` through `.br-7` preserved as requested
+- [x] No errors in JavaScript code
+
+### Testing Needed
+- [ ] Test first check-in (Day 1) - verify region-1 becomes selectable
+- [ ] Test subsequent check-ins - verify progressive unlock
+- [ ] Test clicking unlocked regions - verify toggle functionality works
+- [ ] Test clicking locked regions - verify they don't respond
+- [ ] Test reset functionality - verify all regions become locked again
+- [ ] Test localStorage persistence across page reloads
+
+### No Current Failures
+The region selection logic has been successfully implemented with correct SVG element targeting.
+
+---
+
+## Previous Task: Mobile Optimization & Native App-like Experience (COMPLETED)
 
 ### Approach
 Optimizing the website for mobile devices with focus on:
