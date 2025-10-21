@@ -81,12 +81,14 @@ class BrainSelector {
           region
             .style('pointer-events', 'auto')
             .style('cursor', 'pointer')
+            .classed('unlocked', true)
             .on('click', () => this.toggleRegion(i));
         } else {
-          // Locked regions - disable clicking
+          // Locked regions - disable clicking and remove unlocked class
           region
             .style('pointer-events', 'none')
             .style('cursor', 'not-allowed')
+            .classed('unlocked', false)
             .on('click', null);
         }
       }
@@ -186,7 +188,6 @@ class BrainSelector {
 
     // Check if already checked in today
     if (this.hasCheckedInToday) {
-      alert('You have already checked in today! Come back tomorrow. 🎯');
       return;
     }
 
@@ -224,8 +225,8 @@ class BrainSelector {
     // Update region interactions to make the newly unlocked region clickable
     this.setupRegionInteractions();
 
-    // Show success message
-    alert(`✅ Day ${this.currentDayNumber} complete! Great job! See you tomorrow.`);
+    // Update the button state
+    this.updateCheckInButton();
   }
 
   // Reset all check-ins
@@ -255,6 +256,10 @@ class BrainSelector {
     localStorage.removeItem(STORAGE_KEY);
 
     console.log('All check-ins reset');
+    
+    // Update the button state
+    this.updateCheckInButton();
+    
     alert('All check-ins have been reset. Start fresh tomorrow!');
   }
 
@@ -268,6 +273,26 @@ class BrainSelector {
     d3.select('#done-btn').on('click', () => {
       this.checkIn();
     });
+    
+    // Update check-in button state
+    this.updateCheckInButton();
+  }
+  
+  updateCheckInButton() {
+    const btn = d3.select('#done-btn');
+    
+    if (this.hasCheckedInToday) {
+      // Already checked in today - disable button and show achievement
+      btn
+        .property('disabled', true)
+        .text(`Day ${this.currentDayNumber} Achieved`);
+    } else {
+      // Can check in - enable button and show day number
+      const nextDay = this.currentDayNumber + 1;
+      btn
+        .property('disabled', false)
+        .text(`Day ${nextDay} Check-in`);
+    }
   }
 }
 

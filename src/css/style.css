@@ -80,6 +80,11 @@ header p {
   transition: all 0.3s ease;
 }
 
+/* Unlocked but unselected regions should be white */
+.brain-region.unlocked {
+  fill: #ffffff;
+}
+
 .br-1:hover {
   fill: #F1938C;
   stroke: #ff6b6b;
@@ -216,16 +221,24 @@ header p {
   border-color: #000;
 }
 
+.btn-done:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #94C45E;
+  color: white;
+  border-color: #5AA332;
+}
+
 /* Only apply hover on devices that support hover (not touch devices) */
 @media (hover: hover) {
-  .btn-done:hover {
+  .btn-done:hover:not(:disabled) {
     color: #5AA332;
     border-color: #5AA332;
   }
 }
 
 /* Active state for touch feedback on mobile */
-.btn-done:active {
+.btn-done:active:not(:disabled) {
   color: #5AA332;
   border-color: #5AA332;
 }
