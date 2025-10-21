@@ -260,7 +260,7 @@ class BrainSelector {
     // Update the button state
     this.updateCheckInButton();
     
-    alert('All check-ins have been reset. Start fresh tomorrow!');
+    alert('All check-ins have been reset.');
   }
 
   setupEventListeners() {
