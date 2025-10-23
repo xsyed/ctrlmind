@@ -257,7 +257,7 @@ class BrainSelector {
       startDate: null,
       checkIns: []
     };
-    this.currentDayNumber = 0;
+    this.currentDayNumber = 1;
     this.hasCheckedInToday = false;
 
     // Remove selected class from all regions
