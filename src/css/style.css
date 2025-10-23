@@ -583,7 +583,8 @@ footer {
   }
 
   .label-display {
-    padding: 10px 15px;
+    padding: 5px 7px;
+    margin: 0;
   }
 
   #label-text {
