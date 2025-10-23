@@ -3,12 +3,188 @@
 ## Project Overview
 **Project:** Interactive Brain SVG Selector  
 **Started:** October 18, 2025  
-**Status:** Active Development - Bug Fix for Day Counter  
+**Status:** Active Development - UTC Storage with Local Display  
 **Last Updated:** October 22, 2025
 
 ---
 
-## Current Task: Fix Day Counter Display Bug
+## Current Task: Implement UTC Storage with Local Timezone Display
+
+### Approach
+Implement industry best practice for date/time handling:
+1. **Store in UTC** - All dates stored as full ISO timestamps with seconds precision (e.g., "2025-10-21T17:30:45.123Z")
+2. **Compare in Local Time** - When determining "what day is it", use local timezone dates
+3. **Display in Local Time** - Show dates/times in user's local timezone
+
+This ensures:
+- ✅ Data consistency across timezones
+- ✅ No timezone bugs when users travel or change timezones
+- ✅ Better UX (users see their local time)
+- ✅ Audit trail with precise timestamps
+
+### Implementation Changes
+
+#### 1. New Date/Time Helper Methods
+
+**`getTodayTimestamp()`** - For storage
+```javascript
+getTodayTimestamp() {
+  return new Date().toISOString(); // Returns full UTC timestamp
+}
+```
+Returns: `"2025-10-22T23:15:30.456Z"`
+
+**`getLocalDateString(dateInput)`** - For comparison and display
+```javascript
+getLocalDateString(dateInput) {
+  const date = dateInput ? new Date(dateInput) : new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+```
+- Takes a timestamp or Date object
+- Returns local date string: `"2025-10-22"`
+- Uses local timezone components (not UTC)
+
+**`daysBetween(dateStr1, dateStr2)`** - Updated for local dates
+```javascript
+daysBetween(dateStr1, dateStr2) {
+  const d1 = new Date(dateStr1 + 'T00:00:00');
+  const d2 = new Date(dateStr2 + 'T00:00:00');
+  const diffTime = Math.abs(d2 - d1);
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
+}
+```
+- Takes date strings in "YYYY-MM-DD" format
+- Creates dates at local midnight
+- Returns whole day difference
+
+#### 2. Updated Data Storage Format
+
+**Before:**
+```javascript
+{
+  "startDate": "2025-10-21",
+  "checkIns": [
+    {
+      "region": 1,
+      "date": "2025-10-21"
+    }
+  ]
+}
+```
+
+**After:**
+```javascript
+{
+  "startDate": "2025-10-21T17:30:45.123Z",  // Full UTC timestamp
+  "checkIns": [
+    {
+      "region": 1,
+      "timestamp": "2025-10-21T17:30:45.123Z"  // Full UTC timestamp with seconds
+    }
+  ]
+}
+```
+
+#### 3. Updated `calculateCurrentDay()` Method
+- Gets current local date string using `getLocalDateString()`
+- Extracts local date from stored UTC `startDate` timestamp
+- Compares dates in local timezone
+- Finds today's check-in by comparing local date strings extracted from timestamps
+
+#### 4. Updated `checkIn()` Method
+- Stores full UTC timestamp using `getTodayTimestamp()`
+- `startDate` stored as UTC timestamp
+- Each check-in stores `timestamp` (UTC) instead of `date` (string)
+
+### Steps Completed
+1. ✅ Analyzed previous timezone bug
+2. ✅ Designed UTC storage + local display architecture
+3. ✅ Implemented `getTodayTimestamp()` method
+4. ✅ Implemented `getLocalDateString()` method
+5. ✅ Updated `daysBetween()` to work with local date strings
+6. ✅ Updated `calculateCurrentDay()` to extract local dates from UTC timestamps
+7. ✅ Updated `checkIn()` to store full UTC timestamps
+8. ✅ Changed field name from `date` to `timestamp` in check-ins
+9. ✅ Removed backward compatibility code (clean implementation)
+10. ✅ Added helpful console logs showing UTC and local timestamps
+11. ✅ Updated README.md with data storage format documentation
+12. ✅ Documented all changes in progress.md
+
+### Example Output
+
+**Console Logs on Check-in:**
+```
+Brain Selector initialized successfully!
+Current day: 2
+Has checked in today: false
+Storage format: {
+  startDate: "2025-10-21T17:30:45.123Z",
+  checkIns: [{region: 1, timestamp: "2025-10-21T17:30:45.123Z"}]
+}
+Checked in region 2 on 2025-10-22 (UTC: 2025-10-23T07:15:30.456Z)
+```
+
+**localStorage Data:**
+```json
+{
+  "startDate": "2025-10-22T23:15:30.456Z",
+  "checkIns": [
+    {
+      "region": 1,
+      "timestamp": "2025-10-22T23:15:30.456Z"
+    },
+    {
+      "region": 2,
+      "timestamp": "2025-10-23T14:22:45.789Z"
+    }
+  ]
+}
+```
+
+### Files Modified
+1. **`/Users/sami/Documents/nnn/src/js/main.js`**
+   - Replaced `getTodayDate()` with `getTodayTimestamp()` and `getLocalDateString()`
+   - Updated `daysBetween()` to parse local dates correctly
+   - Updated `calculateCurrentDay()` to work with UTC timestamps
+   - Updated `checkIn()` to store UTC timestamps with seconds precision
+   - Enhanced console logging to show both UTC and local representations
+   - Removed all backward compatibility code for cleaner implementation
+
+2. **`/Users/sami/Documents/nnn/README.md`**
+   - Added "💾 Data Storage Format" section
+   - Documented storage structure and design principles
+   - Added example data flow showing UTC storage + local display
+
+3. **`/Users/sami/Documents/nnn/progress.md`**
+   - Complete documentation of the UTC storage implementation
+
+### Benefits of This Approach
+
+**Data Integrity:**
+- All timestamps in UTC eliminate timezone ambiguity
+- Seconds-precision timestamps provide accurate audit trail
+- Can add features like "time of day" analysis later
+- No legacy data format to maintain
+
+**User Experience:**
+- Users see dates in their own timezone
+- No confusion when traveling across timezones
+- Day boundaries respect local time (midnight in user's location)
+
+**Developer Experience:**
+- Clear separation: store in UTC, display in local
+- Standard ISO format is widely supported
+- Easy to debug with full timestamps in console logs
+- Clean codebase without backward compatibility complexity
+
+---
+
+## Previous Task: Fix Day Counter Display Bug
 
 ### Bug Description
 The check-in button shows incorrect day numbers. 
@@ -17,65 +193,100 @@ The check-in button shows incorrect day numbers.
 - localStorage data: startDate: "2025-10-21", checkIns: [{region: 1, date: "2025-10-21"}]
 - Current date: 2025-10-22
 - **Expected:** Button shows "Day 2 Check-in" and only region-2 is unlocked
-- **Actual:** Button shows "Day 4 Check-in"
+- **Actual:** Button shows "Day 3 Check-in"
 
-### Root Cause Analysis
-The bug is in the `updateCheckInButton()` method. When the user hasn't checked in today:
-- `currentDayNumber` correctly represents the current day (e.g., 2 on 2025-10-22)
-- The button incorrectly calculates `nextDay = currentDayNumber + 1` and shows "Day 3 Check-in"
-- But we want to check in for the current day, not the next day
-- The `checkIn()` method correctly checks in `region: this.currentDayNumber`, confirming that `currentDayNumber` is the day we should check in
+### Root Cause Analysis (UPDATED)
 
-**Logic Flow:**
-1. Day 1 (2025-10-21): currentDayNumber = 1, checking in region 1 ✓
-2. Day 2 (2025-10-22): currentDayNumber = 2, should check in region 2 ✓
-3. Button text: Should show "Day 2 Check-in" (currentDayNumber), not "Day 3 Check-in" (currentDayNumber + 1) ✗
+**Initial Fix Attempt:**
+Fixed `updateCheckInButton()` to show `currentDayNumber` instead of `currentDayNumber + 1`. However, the issue persisted.
 
-### The Fix
-In `updateCheckInButton()` method, change:
+**Actual Root Cause - Timezone Bug:**
+The real problem was in the `getTodayDate()` function:
 ```javascript
-const nextDay = this.currentDayNumber + 1;
-btn.text(`Day ${nextDay} Check-in`);
+// OLD CODE - BUGGY
+getTodayDate() {
+  const today = new Date();
+  return today.toISOString().split('T')[0];  // Returns UTC date, not local date!
+}
 ```
-To:
+
+**The Issue:**
+- `toISOString()` returns the date in UTC timezone
+- If you're in a timezone behind UTC (e.g., PST/PDT which is UTC-7 or UTC-8), and it's late in the day, UTC could already be the next day
+- Example: If it's 2025-10-22 at 8:00 PM PST, UTC time is 2025-10-23 at 4:00 AM
+- This causes `getTodayDate()` to return "2025-10-23" instead of "2025-10-22"
+- Result: daysBetween("2025-10-21", "2025-10-23") = 2, currentDayNumber = 3, button shows "Day 3"
+
+**Secondary Issue:**
+The `daysBetween()` function used `Math.ceil()` which could round up fractional days, making the problem worse.
+
+### The Fixes
+
+**Fix 1: Use Local Date in getTodayDate()**
 ```javascript
+// NEW CODE - FIXED
+getTodayDate() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+```
+This uses the local timezone's date components instead of converting to UTC.
+
+**Fix 2: Use Math.round() Instead of Math.ceil()**
+```javascript
+// Changed from Math.ceil to Math.round
+const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+```
+This prevents rounding up partial days that could occur due to daylight saving time or other edge cases.
+
+**Fix 3: Remove nextDay Calculation in updateCheckInButton()**
+```javascript
+// Changed from: Day ${nextDay} Check-in
+// To: Day ${this.currentDayNumber} Check-in
 btn.text(`Day ${this.currentDayNumber} Check-in`);
 ```
-
-This ensures the button text matches the region that will actually be checked in.
 
 ### Steps to Fix
 1. ✅ Analyzed bug with localStorage data
 2. ✅ Traced through calculateCurrentDay() logic
 3. ✅ Identified incorrect calculation in updateCheckInButton()
-4. ✅ Apply fix to main.js
-5. ✅ Test with the provided localStorage data
+4. ✅ Applied initial fix to main.js
+5. ✅ User reported bug still present - "Day 3 Check-in" showing
+6. ✅ Deep-dived into getTodayDate() and daysBetween() functions
+7. ✅ Discovered timezone issue with toISOString()
+8. ✅ Fixed getTodayDate() to use local timezone
+9. ✅ Fixed daysBetween() to use Math.round() instead of Math.ceil()
+10. ✅ Updated progress.md with complete analysis
 
-### Fix Applied
-**File:** `/Users/sami/Documents/nnn/src/js/main.js`  
-**Method:** `updateCheckInButton()`  
-**Change:** Removed the `nextDay` variable and incorrect calculation. Now directly uses `this.currentDayNumber` for the button text when checking in.
+### Fixes Applied
+**File:** `/Users/sami/Documents/nnn/src/js/main.js`
 
-**Before:**
-```javascript
-const nextDay = this.currentDayNumber + 1;
-btn.text(`Day ${nextDay} Check-in`);
-```
+**Change 1: getTodayDate() method**
+- Replaced `toISOString().split('T')[0]` with manual date component extraction
+- Now uses local timezone's year, month, and day
 
-**After:**
-```javascript
-btn.text(`Day ${this.currentDayNumber} Check-in`);
-```
+**Change 2: daysBetween() method**  
+- Changed `Math.ceil()` to `Math.round()`
+- Prevents incorrect rounding of fractional days
+
+**Change 3: updateCheckInButton() method**  
+- Removed `nextDay` variable calculation
+- Directly uses `this.currentDayNumber` for button text
 
 ### Verification
 With the test data:
 - startDate: "2025-10-21"
 - checkIns: [{region: 1, date: "2025-10-21"}]
-- Current date: 2025-10-22
+- Current date: 2025-10-22 (local timezone)
 
 **Result:**
-- `currentDayNumber` = 2 (calculated correctly from daysSinceStart)
-- `hasCheckedInToday` = false (no check-in for 2025-10-22)
+- `getTodayDate()` returns "2025-10-22" (local date, not UTC) ✓
+- `daysBetween("2025-10-21", "2025-10-22")` returns 1 ✓
+- `currentDayNumber` = 1 + 1 = 2 ✓
+- `hasCheckedInToday` = false (no check-in for 2025-10-22) ✓
 - Button shows: "Day 2 Check-in" ✓
 - Regions unlocked: region-1 and region-2 ✓
 - Only region-1 is selected (checked in) ✓

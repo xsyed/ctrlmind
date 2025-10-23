@@ -38,6 +38,7 @@ class BrainSelector {
       console.log('Brain Selector initialized successfully!');
       console.log('Current day:', this.currentDayNumber);
       console.log('Has checked in today:', this.hasCheckedInToday);
+      console.log('Storage format:', this.checkInData);
     } catch (error) {
       console.error('Error initializing Brain Selector:', error);
     }
@@ -107,18 +108,27 @@ class BrainSelector {
     }
   }
 
-  // Get today's date in YYYY-MM-DD format
-  getTodayDate() {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
+  // Get current timestamp in UTC (ISO format with seconds precision)
+  getTodayTimestamp() {
+    return new Date().toISOString();
   }
 
-  // Calculate days between two dates
-  daysBetween(date1, date2) {
-    const d1 = new Date(date1);
-    const d2 = new Date(date2);
+  // Extract local date string (YYYY-MM-DD) from a timestamp or Date object
+  getLocalDateString(dateInput) {
+    const date = dateInput ? new Date(dateInput) : new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  // Calculate days between two date strings (YYYY-MM-DD format)
+  daysBetween(dateStr1, dateStr2) {
+    // Parse as local dates at midnight
+    const d1 = new Date(dateStr1 + 'T00:00:00');
+    const d2 = new Date(dateStr2 + 'T00:00:00');
     const diffTime = Math.abs(d2 - d1);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   }
 
@@ -151,21 +161,27 @@ class BrainSelector {
 
   // Calculate current day number and check if already checked in today
   calculateCurrentDay() {
-    const today = this.getTodayDate();
+    const todayDateStr = this.getLocalDateString(); // Get local date string (YYYY-MM-DD)
     
-    // If no start date, this is day 0 (will become day 1 on first check-in)
+    // If no start date, this is day 1 (user will check in for day 1)
     if (!this.checkInData.startDate) {
-      this.currentDayNumber = 0;
+      this.currentDayNumber = 1;
       this.hasCheckedInToday = false;
       return;
     }
 
-    // Calculate days since start date
-    const daysSinceStart = this.daysBetween(this.checkInData.startDate, today);
+    // Extract local date from stored UTC timestamp
+    const startDateStr = this.getLocalDateString(this.checkInData.startDate);
+    
+    // Calculate days since start date (using local dates)
+    const daysSinceStart = this.daysBetween(startDateStr, todayDateStr);
     this.currentDayNumber = daysSinceStart + 1;
 
-    // Check if already checked in today
-    const todayCheckIn = this.checkInData.checkIns.find(ci => ci.date === today);
+    // Check if already checked in today (compare local date strings)
+    const todayCheckIn = this.checkInData.checkIns.find(ci => {
+      const checkInDateStr = this.getLocalDateString(ci.timestamp);
+      return checkInDateStr === todayDateStr;
+    });
     this.hasCheckedInToday = !!todayCheckIn;
   }
 
@@ -184,16 +200,16 @@ class BrainSelector {
 
   // Check in for today
   checkIn() {
-    const today = this.getTodayDate();
+    const todayTimestamp = this.getTodayTimestamp(); // Get UTC timestamp with seconds precision
 
     // Check if already checked in today
     if (this.hasCheckedInToday) {
       return;
     }
 
-    // If this is the first check-in, set the start date
+    // If this is the first check-in, set the start date with timestamp
     if (!this.checkInData.startDate) {
-      this.checkInData.startDate = today;
+      this.checkInData.startDate = todayTimestamp;
       this.currentDayNumber = 1;
     }
 
@@ -203,10 +219,10 @@ class BrainSelector {
       return;
     }
 
-    // Add check-in for the current day
+    // Add check-in for the current day with UTC timestamp
     const checkIn = {
       region: this.currentDayNumber,
-      date: today
+      timestamp: todayTimestamp // Store full UTC timestamp
     };
     this.checkInData.checkIns.push(checkIn);
     this.hasCheckedInToday = true;
@@ -219,7 +235,8 @@ class BrainSelector {
     const region = this.svg.select(regionId);
     if (!region.empty()) {
       region.classed(SELECTED_CLASS, true);
-      console.log(`Checked in region ${this.currentDayNumber} on ${today}`);
+      const localDateStr = this.getLocalDateString(todayTimestamp);
+      console.log(`Checked in region ${this.currentDayNumber} on ${localDateStr} (UTC: ${todayTimestamp})`);
     }
 
     // Update region interactions to make the newly unlocked region clickable

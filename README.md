@@ -153,6 +153,45 @@ regions
   .on('mouseleave', () => this.hideTooltip());
 ```
 
+## 💾 Data Storage Format
+
+The application stores check-in data in `localStorage` using UTC timestamps for data integrity and local timezone for display.
+
+### Storage Structure
+
+```javascript
+{
+  "startDate": "2025-10-22T23:15:30.456Z",  // UTC timestamp of first check-in
+  "checkIns": [
+    {
+      "region": 1,                            // Region number (1-90)
+      "timestamp": "2025-10-22T23:15:30.456Z" // UTC timestamp with seconds precision
+    },
+    {
+      "region": 2,
+      "timestamp": "2025-10-23T14:22:45.789Z"
+    }
+  ]
+}
+```
+
+### Design Principles
+
+- **Store in UTC**: All timestamps stored in UTC (ISO 8601 format) for consistency across timezones
+- **Display in Local**: Dates displayed to users in their local timezone
+- **Seconds Precision**: Full timestamp including seconds for accurate audit trail
+- **Clean Implementation**: No legacy format support - all data uses ISO timestamps
+
+### Example Data Flow
+
+1. **User checks in** (at 11:15 PM PST on Oct 22, 2025):
+   - Stored: `"2025-10-23T07:15:30.456Z"` (UTC)
+   - Displayed: "Oct 22, 2025" (local date)
+
+2. **Day calculation**:
+   - Compare local dates extracted from UTC timestamps
+   - Ensures day boundaries respect user's timezone
+
 ## 🎨 Customization
 
 ### Adding New Regions
