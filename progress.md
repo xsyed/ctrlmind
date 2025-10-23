@@ -10,6 +10,33 @@
 
 ## Current Task: Way Dropdown Feature (October 22, 2025)
 
+### Bug Fix (October 23, 2025)
+**Issue:** 60-day way was only unlocking 1 region on day 1 instead of 2 regions.
+
+**Root Cause:** Used `Math.floor` in region calculation, which caused day 1 with 60-day way to calculate:
+- startRegion = floor(0 × 1.5) + 1 = 1
+- endRegion = floor(1 × 1.5) = floor(1.5) = 1
+- Result: Only [1] instead of [1, 2]
+
+**Solution:** Changed to `Math.ceil` for better front-loading distribution:
+- startRegion = ceil(0 × 1.5) + 1 = 1
+- endRegion = ceil(1 × 1.5) = ceil(1.5) = 2
+- Result: [1, 2] ✓
+
+**Updated Distribution Pattern (60 days):**
+- Day 1: [1, 2] (2 regions)
+- Day 2: [3] (1 region)
+- Day 3: [4, 5] (2 regions)
+- Day 4: [6] (1 region)
+- Pattern: 2-1-2-1 alternating, starting with 2 regions
+
+**Verified all ways still work correctly:**
+- 30 days: Day 1 → [1,2,3] ✓
+- 60 days: Day 1 → [1,2] ✓ (FIXED)
+- 90 days: Day 1 → [1] ✓
+
+---
+
 ### Feature Overview
 Adding a "Way" dropdown to allow users to choose their journey duration: 30, 60, or 90 days. This changes how many regions are unlocked per daily check-in.
 
@@ -25,15 +52,17 @@ Adding a "Way" dropdown to allow users to choose their journey duration: 30, 60,
 ```javascript
 function getRegionsForDay(dayNumber, way) {
   const regionsPerDay = 90 / way;
-  const startRegion = Math.floor((dayNumber - 1) * regionsPerDay) + 1;
-  const endRegion = Math.floor(dayNumber * regionsPerDay);
+  const startRegion = Math.ceil((dayNumber - 1) * regionsPerDay) + 1;
+  const endRegion = Math.ceil(dayNumber * regionsPerDay);
   return regions from startRegion to endRegion;
 }
 ```
 
+**Note:** Uses `Math.ceil` for front-loading distribution, ensuring early days get more regions when using 60-day way.
+
 **Examples:**
 - 30 days: Day 1 → [1,2,3], Day 2 → [4,5,6], Day 30 → [88,89,90]
-- 60 days: Day 1 → [1], Day 2 → [2,3], Day 3 → [4], Day 60 → [90]
+- 60 days: Day 1 → [1,2], Day 2 → [3], Day 3 → [4,5], Day 60 → [90]
 - 90 days: Day 1 → [1], Day 2 → [2], Day 90 → [90]
 
 ### Implementation Steps Completed

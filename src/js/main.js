@@ -130,8 +130,8 @@ class BrainSelector {
     const totalRegions = MAX_REGIONS;
     const regionsPerDay = totalRegions / way;
     
-    const startRegion = Math.floor((dayNumber - 1) * regionsPerDay) + 1;
-    const endRegion = Math.floor(dayNumber * regionsPerDay);
+    const startRegion = Math.ceil((dayNumber - 1) * regionsPerDay) + 1;
+    const endRegion = Math.ceil(dayNumber * regionsPerDay);
     
     const regions = [];
     for (let i = startRegion; i <= endRegion; i++) {
