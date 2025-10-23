@@ -3,6 +3,7 @@ import * as d3 from 'd3';
 // Constants
 const STORAGE_KEY = 'brain-checkin-data';
 const LABEL_STORAGE_KEY = 'brain-label';
+const WAY_STORAGE_KEY = 'brain-way';
 const SELECTED_CLASS = 'selected';
 const MAX_REGIONS = 90;
 
@@ -10,12 +11,14 @@ class BrainSelector {
   constructor() {
     this.checkInData = {
       startDate: null,
-      checkIns: []
+      currentWay: 30, // Default to 30 days
+      checkIns: [] // Array of {dayNumber, regions: [], timestamp, way}
     };
     this.svg = null;
     this.currentDayNumber = 0;
     this.hasCheckedInToday = false;
     this.brainLabel = 'My Brain Journey';
+    this.currentWay = 30; // Default way
     
     this.init();
   }
@@ -27,6 +30,9 @@ class BrainSelector {
       
       // Load brain label
       this.loadBrainLabel();
+      
+      // Load way setting
+      this.loadWaySetting();
       
       // Calculate current day number
       this.calculateCurrentDay();
@@ -42,6 +48,7 @@ class BrainSelector {
       
       console.log('Brain Selector initialized successfully!');
       console.log('Current day:', this.currentDayNumber);
+      console.log('Current way:', this.currentWay);
       console.log('Has checked in today:', this.hasCheckedInToday);
       console.log('Storage format:', this.checkInData);
     } catch (error) {
@@ -75,14 +82,14 @@ class BrainSelector {
   }
 
   setupRegionInteractions() {
-    const regions = this.svg.selectAll('.brain-region');
+    const unlockedRegions = this.getAllUnlockedRegions();
     
     // Update which regions are clickable based on unlocked regions
     for (let i = 1; i <= MAX_REGIONS; i++) {
       const region = this.svg.select(`#region-${i}`);
       
       if (!region.empty()) {
-        if (i <= this.currentDayNumber) {
+        if (unlockedRegions.includes(i)) {
           // Unlocked regions - make them clickable
           region
             .style('pointer-events', 'auto')
@@ -118,6 +125,37 @@ class BrainSelector {
     return new Date().toISOString();
   }
 
+  // Calculate which regions should be unlocked for a given day number and way
+  getRegionsForDay(dayNumber, way) {
+    const totalRegions = MAX_REGIONS;
+    const regionsPerDay = totalRegions / way;
+    
+    const startRegion = Math.floor((dayNumber - 1) * regionsPerDay) + 1;
+    const endRegion = Math.floor(dayNumber * regionsPerDay);
+    
+    const regions = [];
+    for (let i = startRegion; i <= endRegion; i++) {
+      if (i <= totalRegions) {
+        regions.push(i);
+      }
+    }
+    return regions;
+  }
+
+  // Get all regions that have been unlocked by previous check-ins
+  getAllUnlockedRegions() {
+    const unlockedRegions = new Set();
+    this.checkInData.checkIns.forEach(checkIn => {
+      if (checkIn.regions && Array.isArray(checkIn.regions)) {
+        checkIn.regions.forEach(region => unlockedRegions.add(region));
+      } else if (checkIn.region) {
+        // Handle old format where single region was stored
+        unlockedRegions.add(checkIn.region);
+      }
+    });
+    return Array.from(unlockedRegions);
+  }
+
   // Extract local date string (YYYY-MM-DD) from a timestamp or Date object
   getLocalDateString(dateInput) {
     const date = dateInput ? new Date(dateInput) : new Date();
@@ -142,15 +180,43 @@ class BrainSelector {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        this.checkInData = JSON.parse(saved);
+        const loadedData = JSON.parse(saved);
+        
+        // Handle migration from old format to new format
+        if (loadedData.checkIns && loadedData.checkIns.length > 0) {
+          const firstCheckIn = loadedData.checkIns[0];
+          
+          // Old format: {region: number, timestamp: string}
+          // New format: {dayNumber: number, regions: [], timestamp: string, way: number}
+          if (firstCheckIn.region && !firstCheckIn.regions) {
+            // Migrate old format: assume 90-day way (1 region per day)
+            loadedData.checkIns = loadedData.checkIns.map((checkIn, index) => ({
+              dayNumber: index + 1,
+              regions: [checkIn.region],
+              timestamp: checkIn.timestamp,
+              way: 90 // Old format was 1 region per day
+            }));
+            loadedData.currentWay = 90;
+          }
+        }
+        
+        // Ensure currentWay exists
+        if (!loadedData.currentWay) {
+          loadedData.currentWay = 30; // Default to 30 days
+        }
+        
+        this.checkInData = loadedData;
+        this.currentWay = loadedData.currentWay;
         console.log('Check-in data loaded:', this.checkInData);
       }
     } catch (error) {
       console.error('Error loading check-in data:', error);
       this.checkInData = {
         startDate: null,
+        currentWay: 30,
         checkIns: []
       };
+      this.currentWay = 30;
     }
   }
 
@@ -194,8 +260,9 @@ class BrainSelector {
   applyCheckIns() {
     if (!this.svg) return;
 
-    this.checkInData.checkIns.forEach(checkIn => {
-      const regionId = `#region-${checkIn.region}`;
+    const unlockedRegions = this.getAllUnlockedRegions();
+    unlockedRegions.forEach(regionNum => {
+      const regionId = `#region-${regionNum}`;
       const region = this.svg.select(regionId);
       if (!region.empty()) {
         region.classed(SELECTED_CLASS, true);
@@ -218,33 +285,45 @@ class BrainSelector {
       this.currentDayNumber = 1;
     }
 
-    // Check if we've exceeded the maximum regions
-    if (this.currentDayNumber > MAX_REGIONS) {
+    // Calculate which regions to unlock based on current day and way
+    const regionsToUnlock = this.getRegionsForDay(this.currentDayNumber, this.currentWay);
+    
+    // Check if any regions exceed the maximum
+    const maxRegion = Math.max(...regionsToUnlock);
+    if (maxRegion > MAX_REGIONS) {
       alert('Congratulations! You have completed all 90 days! 🎉');
       return;
     }
 
-    // Add check-in for the current day with UTC timestamp
+    // Add check-in for the current day with UTC timestamp and multiple regions
     const checkIn = {
-      region: this.currentDayNumber,
-      timestamp: todayTimestamp // Store full UTC timestamp
+      dayNumber: this.currentDayNumber,
+      regions: regionsToUnlock,
+      timestamp: todayTimestamp,
+      way: this.currentWay
     };
     this.checkInData.checkIns.push(checkIn);
     this.hasCheckedInToday = true;
 
+    // Update currentWay in checkInData
+    this.checkInData.currentWay = this.currentWay;
+
     // Save to localStorage
     this.saveCheckInData();
 
-    // Update the visual
-    const regionId = `#region-${this.currentDayNumber}`;
-    const region = this.svg.select(regionId);
-    if (!region.empty()) {
-      region.classed(SELECTED_CLASS, true);
-      const localDateStr = this.getLocalDateString(todayTimestamp);
-      console.log(`Checked in region ${this.currentDayNumber} on ${localDateStr} (UTC: ${todayTimestamp})`);
-    }
+    // Update the visuals for all unlocked regions
+    regionsToUnlock.forEach(regionNum => {
+      const regionId = `#region-${regionNum}`;
+      const region = this.svg.select(regionId);
+      if (!region.empty()) {
+        region.classed(SELECTED_CLASS, true);
+      }
+    });
 
-    // Update region interactions to make the newly unlocked region clickable
+    const localDateStr = this.getLocalDateString(todayTimestamp);
+    console.log(`Checked in day ${this.currentDayNumber} - regions ${regionsToUnlock.join(', ')} on ${localDateStr} (UTC: ${todayTimestamp})`);
+
+    // Update region interactions to make the newly unlocked regions clickable
     this.setupRegionInteractions();
 
     // Update the button state
@@ -257,9 +336,10 @@ class BrainSelector {
       return;
     }
 
-    // Clear the data
+    // Clear the data but keep current way setting
     this.checkInData = {
       startDate: null,
+      currentWay: this.currentWay,
       checkIns: []
     };
     this.currentDayNumber = 1;
@@ -274,8 +354,8 @@ class BrainSelector {
       this.setupRegionInteractions();
     }
 
-    // Clear localStorage
-    localStorage.removeItem(STORAGE_KEY);
+    // Save to localStorage (preserves way setting)
+    this.saveCheckInData();
 
     console.log('All check-ins reset');
     
@@ -311,6 +391,11 @@ class BrainSelector {
       if (event.key === 'Enter') {
         this.saveBrainLabel();
       }
+    });
+    
+    // Way dropdown - update way setting
+    d3.select('#way-dropdown').on('change', (event) => {
+      this.updateWaySetting(parseInt(event.target.value));
     });
     
     // Update check-in button state
@@ -388,6 +473,50 @@ class BrainSelector {
     // Hide edit, show display
     d3.select('#label-display').style('display', 'flex');
     d3.select('#label-edit').style('display', 'none');
+  }
+
+  // Load way setting from localStorage
+  loadWaySetting() {
+    try {
+      // First try to get from checkInData if it exists
+      if (this.checkInData.currentWay) {
+        this.currentWay = this.checkInData.currentWay;
+      } else {
+        // Fallback to default
+        this.currentWay = 30;
+      }
+      
+      // Update dropdown to match current way
+      const dropdown = d3.select('#way-dropdown');
+      if (!dropdown.empty()) {
+        dropdown.property('value', this.currentWay.toString());
+      }
+      
+      console.log('Way setting loaded:', this.currentWay);
+    } catch (error) {
+      console.error('Error loading way setting:', error);
+      this.currentWay = 30;
+    }
+  }
+
+  // Update way setting
+  updateWaySetting(newWay) {
+    if (![30, 60, 90].includes(newWay)) {
+      console.error('Invalid way setting:', newWay);
+      return;
+    }
+    
+    this.currentWay = newWay;
+    this.checkInData.currentWay = newWay;
+    
+    // Save to localStorage
+    this.saveCheckInData();
+    
+    console.log('Way setting updated to:', this.currentWay);
+    
+    // Note: This only affects future check-ins, not past ones
+    // Update button text to show next check-in info
+    this.updateCheckInButton();
   }
 }
 
