@@ -288,10 +288,9 @@ class BrainSelector {
         .text(`Day ${this.currentDayNumber} Achieved`);
     } else {
       // Can check in - enable button and show day number
-      const nextDay = this.currentDayNumber + 1;
       btn
         .property('disabled', false)
-        .text(`Day ${nextDay} Check-in`);
+        .text(`Day ${this.currentDayNumber} Check-in`);
     }
   }
 }

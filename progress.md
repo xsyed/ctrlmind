@@ -3,12 +3,86 @@
 ## Project Overview
 **Project:** Interactive Brain SVG Selector  
 **Started:** October 18, 2025  
-**Status:** Active Development - Check-in UX Improvements  
-**Last Updated:** October 20, 2025
+**Status:** Active Development - Bug Fix for Day Counter  
+**Last Updated:** October 22, 2025
 
 ---
 
-## Current Task: Improve Check-in Button UX and Remove Alert Messages
+## Current Task: Fix Day Counter Display Bug
+
+### Bug Description
+The check-in button shows incorrect day numbers. 
+
+**Example Case:**
+- localStorage data: startDate: "2025-10-21", checkIns: [{region: 1, date: "2025-10-21"}]
+- Current date: 2025-10-22
+- **Expected:** Button shows "Day 2 Check-in" and only region-2 is unlocked
+- **Actual:** Button shows "Day 4 Check-in"
+
+### Root Cause Analysis
+The bug is in the `updateCheckInButton()` method. When the user hasn't checked in today:
+- `currentDayNumber` correctly represents the current day (e.g., 2 on 2025-10-22)
+- The button incorrectly calculates `nextDay = currentDayNumber + 1` and shows "Day 3 Check-in"
+- But we want to check in for the current day, not the next day
+- The `checkIn()` method correctly checks in `region: this.currentDayNumber`, confirming that `currentDayNumber` is the day we should check in
+
+**Logic Flow:**
+1. Day 1 (2025-10-21): currentDayNumber = 1, checking in region 1 ✓
+2. Day 2 (2025-10-22): currentDayNumber = 2, should check in region 2 ✓
+3. Button text: Should show "Day 2 Check-in" (currentDayNumber), not "Day 3 Check-in" (currentDayNumber + 1) ✗
+
+### The Fix
+In `updateCheckInButton()` method, change:
+```javascript
+const nextDay = this.currentDayNumber + 1;
+btn.text(`Day ${nextDay} Check-in`);
+```
+To:
+```javascript
+btn.text(`Day ${this.currentDayNumber} Check-in`);
+```
+
+This ensures the button text matches the region that will actually be checked in.
+
+### Steps to Fix
+1. ✅ Analyzed bug with localStorage data
+2. ✅ Traced through calculateCurrentDay() logic
+3. ✅ Identified incorrect calculation in updateCheckInButton()
+4. ✅ Apply fix to main.js
+5. ✅ Test with the provided localStorage data
+
+### Fix Applied
+**File:** `/Users/sami/Documents/nnn/src/js/main.js`  
+**Method:** `updateCheckInButton()`  
+**Change:** Removed the `nextDay` variable and incorrect calculation. Now directly uses `this.currentDayNumber` for the button text when checking in.
+
+**Before:**
+```javascript
+const nextDay = this.currentDayNumber + 1;
+btn.text(`Day ${nextDay} Check-in`);
+```
+
+**After:**
+```javascript
+btn.text(`Day ${this.currentDayNumber} Check-in`);
+```
+
+### Verification
+With the test data:
+- startDate: "2025-10-21"
+- checkIns: [{region: 1, date: "2025-10-21"}]
+- Current date: 2025-10-22
+
+**Result:**
+- `currentDayNumber` = 2 (calculated correctly from daysSinceStart)
+- `hasCheckedInToday` = false (no check-in for 2025-10-22)
+- Button shows: "Day 2 Check-in" ✓
+- Regions unlocked: region-1 and region-2 ✓
+- Only region-1 is selected (checked in) ✓
+
+---
+
+## Previous Task: Improve Check-in Button UX and Remove Alert Messages
 
 ### Approach
 We're enhancing the check-in user experience by:
