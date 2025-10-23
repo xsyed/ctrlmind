@@ -3,12 +3,167 @@
 ## Project Overview
 **Project:** Interactive Brain SVG Selector  
 **Started:** October 18, 2025  
-**Status:** Active Development - UTC Storage with Local Display  
+**Status:** Active Development - Custom Brain Label Feature Added  
 **Last Updated:** October 22, 2025
 
 ---
 
-## Current Task: Implement UTC Storage with Local Timezone Display
+## Latest Update: Custom Brain Label Feature (October 22, 2025)
+
+### Feature Overview
+Added a customizable brain label textbox with modern UI that allows users to personalize their brain journey with a custom label.
+
+### Approach
+1. **View Mode**: Display label in a modern gradient container with a pencil/edit icon
+2. **Edit Mode**: When pencil is clicked, transform into an editable textbox with save button
+3. **Persistent Storage**: Save label to localStorage for persistence across sessions
+4. **Modern Design**: Gradient background, smooth transitions, responsive layout
+
+### Implementation Steps Completed
+
+#### 1. HTML Structure (`index.html`)
+✅ Added label container between header and main-content:
+```html
+<div class="label-container">
+  <div class="label-display" id="label-display">
+    <span id="label-text">My Brain Journey</span>
+    <button id="edit-label-btn" class="edit-btn" aria-label="Edit label">
+      <!-- SVG pencil icon -->
+    </button>
+  </div>
+  <div class="label-edit" id="label-edit" style="display: none;">
+    <input type="text" id="label-input" class="label-input" maxlength="50" placeholder="Enter brain label...">
+    <button id="save-label-btn" class="save-btn">Save</button>
+  </div>
+</div>
+```
+
+**Key Features:**
+- Two states: display mode and edit mode
+- SVG pencil icon for modern look
+- Text input with 50 character limit
+- Accessible aria-label for screen readers
+
+#### 2. CSS Styling (`src/css/style.css`)
+✅ Added minimalist, responsive styles matching the done/fail button design:
+
+**Label Display Mode:**
+- Transparent background with 3px black border
+- Clean, minimalist design consistent with app buttons
+- Black text with bold weight (600)
+- No shadows or gradients - pure minimalism
+- Hover effect: border and text change to purple (#667eea)
+
+**Edit Button:**
+- Transparent background with 2px black border
+- Minimalist icon-only design
+- Hover state: purple border and icon color
+- Touch-friendly active states for mobile
+- 16px SVG icon
+
+**Label Edit Mode:**
+- No container background - seamless integration
+- Slide-down animation on show
+- Flex layout for input and button
+
+**Label Input:**
+- Transparent background with 3px black border
+- Bold font (600) matching other UI elements
+- Purple border on focus (#667eea)
+- No rounded corners - sharp, clean edges
+
+**Save Button:**
+- Transparent background with 3px black border
+- Bold text matching done/fail buttons
+- Hover state: purple border and text
+- Touch-optimized active states
+
+**Design Philosophy:**
+- **Minimalism**: No gradients, shadows, or rounded corners
+- **Consistency**: Matches done/fail button styling exactly
+- **Simplicity**: Black borders, transparent backgrounds
+- **Clarity**: Bold fonts, clear visual hierarchy
+
+**Mobile Responsive:**
+- Smaller font sizes and padding
+- Full-width input and button
+- Vertical layout (column flex-direction)
+- Maintains minimalist design on all screen sizes
+
+#### 3. JavaScript Functionality (`src/js/main.js`)
+✅ Implemented complete label management system:
+
+**New Constants:**
+```javascript
+const LABEL_STORAGE_KEY = 'brain-label';
+```
+
+**New Properties:**
+```javascript
+this.brainLabel = 'My Brain Journey'; // Default label
+```
+
+**New Methods:**
+
+1. **`loadBrainLabel()`**
+   - Loads saved label from localStorage
+   - Updates display with saved value
+   - Called during initialization
+   - Falls back to default if no saved label
+
+2. **`showLabelEdit()`**
+   - Switches from display to edit mode
+   - Hides label display div
+   - Shows label edit div with animation
+   - Pre-fills input with current label
+   - Auto-focuses and selects text for easy editing
+
+3. **`saveBrainLabel()`**
+   - Validates input (not empty)
+   - Updates brain label property
+   - Updates display text
+   - Saves to localStorage
+   - Switches back to display mode
+   - Shows success in console
+
+**Event Listeners:**
+- Edit button click → `showLabelEdit()`
+- Save button click → `saveBrainLabel()`
+- Enter key in input → `saveBrainLabel()`
+
+**Integration:**
+- Added `loadBrainLabel()` call in `init()` method
+- Added event listeners in `setupEventListeners()` method
+
+### User Experience Flow
+1. **Initial State**: User sees default label "My Brain Journey" with pencil icon
+2. **Click Pencil**: Label transforms into editable textbox with save button
+3. **Edit Text**: User types custom label (max 50 characters)
+4. **Save**: Click save button or press Enter
+5. **Confirmation**: Label updates and switches back to display mode
+6. **Persistence**: Label is saved and persists across browser sessions
+
+### Design Highlights
+- **Minimalist Design**: Clean black borders, transparent backgrounds, no gradients or shadows
+- **Consistency**: Matches the done/fail button styling perfectly
+- **Smooth Animations**: Slide-down animation for edit mode
+- **Accessibility**: Proper ARIA labels, keyboard support (Enter to save)
+- **Responsive**: Adapts beautifully to mobile with vertical layout
+- **Visual Feedback**: Hover states with purple accent color (#667eea)
+- **User-Friendly**: Auto-focus and text selection on edit for quick editing
+
+### Technical Details
+- **Storage**: Uses localStorage with key `'brain-label'`
+- **Default Value**: `"My Brain Journey"`
+- **Max Length**: 50 characters
+- **Validation**: Prevents empty labels
+- **Error Handling**: Try-catch blocks for localStorage operations
+
+### Status: ✅ Feature Complete and Working
+
+---
+
+## Previous Task: Implement UTC Storage with Local Timezone Display
 
 ### Approach
 Implement industry best practice for date/time handling:

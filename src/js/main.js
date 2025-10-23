@@ -2,6 +2,7 @@ import * as d3 from 'd3';
 
 // Constants
 const STORAGE_KEY = 'brain-checkin-data';
+const LABEL_STORAGE_KEY = 'brain-label';
 const SELECTED_CLASS = 'selected';
 const MAX_REGIONS = 90;
 
@@ -14,6 +15,7 @@ class BrainSelector {
     this.svg = null;
     this.currentDayNumber = 0;
     this.hasCheckedInToday = false;
+    this.brainLabel = 'My Brain Journey';
     
     this.init();
   }
@@ -22,6 +24,9 @@ class BrainSelector {
     try {
       // Load check-in data from localStorage
       this.loadCheckInData();
+      
+      // Load brain label
+      this.loadBrainLabel();
       
       // Calculate current day number
       this.calculateCurrentDay();
@@ -291,6 +296,23 @@ class BrainSelector {
       this.checkIn();
     });
     
+    // Label edit button
+    d3.select('#edit-label-btn').on('click', () => {
+      this.showLabelEdit();
+    });
+    
+    // Label save button
+    d3.select('#save-label-btn').on('click', () => {
+      this.saveBrainLabel();
+    });
+    
+    // Label input - save on Enter key
+    d3.select('#label-input').on('keypress', (event) => {
+      if (event.key === 'Enter') {
+        this.saveBrainLabel();
+      }
+    });
+    
     // Update check-in button state
     this.updateCheckInButton();
   }
@@ -309,6 +331,63 @@ class BrainSelector {
         .property('disabled', false)
         .text(`Day ${this.currentDayNumber} Check-in`);
     }
+  }
+
+  // Load brain label from localStorage
+  loadBrainLabel() {
+    try {
+      const saved = localStorage.getItem(LABEL_STORAGE_KEY);
+      if (saved) {
+        this.brainLabel = saved;
+        d3.select('#label-text').text(this.brainLabel);
+        console.log('Brain label loaded:', this.brainLabel);
+      }
+    } catch (error) {
+      console.error('Error loading brain label:', error);
+    }
+  }
+
+  // Show label edit mode
+  showLabelEdit() {
+    const displayDiv = d3.select('#label-display');
+    const editDiv = d3.select('#label-edit');
+    const input = d3.select('#label-input');
+    
+    // Hide display, show edit
+    displayDiv.style('display', 'none');
+    editDiv.style('display', 'flex');
+    
+    // Set current value and focus
+    input.node().value = this.brainLabel;
+    input.node().focus();
+    input.node().select();
+  }
+
+  // Save brain label
+  saveBrainLabel() {
+    const input = d3.select('#label-input');
+    const newLabel = input.node().value.trim();
+    
+    if (newLabel === '') {
+      alert('Label cannot be empty');
+      return;
+    }
+    
+    // Update label
+    this.brainLabel = newLabel;
+    d3.select('#label-text').text(this.brainLabel);
+    
+    // Save to localStorage
+    try {
+      localStorage.setItem(LABEL_STORAGE_KEY, this.brainLabel);
+      console.log('Brain label saved:', this.brainLabel);
+    } catch (error) {
+      console.error('Error saving brain label:', error);
+    }
+    
+    // Hide edit, show display
+    d3.select('#label-display').style('display', 'flex');
+    d3.select('#label-edit').style('display', 'none');
   }
 }
 
