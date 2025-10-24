@@ -12,7 +12,8 @@ class BrainSelector {
     this.checkInData = {
       startDate: null,
       currentWay: 30, // Default to 30 days
-      checkIns: [], // Array of {dayNumber, regions: [], timestamp, way}
+      completedDays: [], // Array of day numbers that were checked in via button (permanent)
+      checkedRegions: {}, // Object mapping day -> [regions] that are currently checked (toggleable)
       maxDayReached: 0, // Track the highest day reached
       currentStreakDays: 0 // Track current consecutive streak
     };
@@ -118,14 +119,7 @@ class BrainSelector {
   getAllUnlockedRegionsUpToCurrentDay() {
     const unlockedRegions = new Set();
     
-    // Add all regions from check-ins
-    this.checkInData.checkIns.forEach(checkIn => {
-      if (checkIn.regions && Array.isArray(checkIn.regions)) {
-        checkIn.regions.forEach(region => unlockedRegions.add(region));
-      }
-    });
-    
-    // Also include all regions that SHOULD be available up to current day
+    // Include all regions that SHOULD be available up to current day
     // This allows users to fill in regions from previous days or current day
     for (let day = 1; day <= this.currentDayNumber; day++) {
       const regionsForDay = this.getRegionsForDay(day, this.currentWay);
@@ -171,7 +165,7 @@ class BrainSelector {
     return dayNumber;
   }
   
-  // Handle manual region click - add to appropriate day's check-in
+  // Handle manual region click - add to appropriate day's checked regions
   handleManualRegionClick(regionNumber) {
     // Determine which day this region belongs to
     const dayNumber = this.findDayForRegion(regionNumber);
@@ -181,64 +175,40 @@ class BrainSelector {
       this.checkInData.startDate = this.getTodayTimestamp();
     }
     
-    // Find if there's already a check-in for this day
-    const existingCheckIn = this.checkInData.checkIns.find(ci => ci.dayNumber === dayNumber);
-    
-    if (existingCheckIn) {
-      // Add region to existing check-in if not already present
-      if (!existingCheckIn.regions.includes(regionNumber)) {
-        existingCheckIn.regions.push(regionNumber);
-        existingCheckIn.regions.sort((a, b) => a - b); // Keep sorted
-        console.log(`Added region ${regionNumber} to existing day ${dayNumber} check-in`);
-      }
-    } else {
-      // Create new check-in for this day
-      const newCheckIn = {
-        dayNumber: dayNumber,
-        regions: [regionNumber],
-        timestamp: this.getTodayTimestamp(),
-        way: this.currentWay
-      };
-      this.checkInData.checkIns.push(newCheckIn);
-      // Sort check-ins by day number
-      this.checkInData.checkIns.sort((a, b) => a.dayNumber - b.dayNumber);
-      console.log(`Created new check-in for day ${dayNumber} with region ${regionNumber}`);
+    // Add region to checkedRegions for this day
+    if (!this.checkInData.checkedRegions[dayNumber]) {
+      this.checkInData.checkedRegions[dayNumber] = [];
     }
     
-    // Update max day reached
-    if (dayNumber > this.checkInData.maxDayReached) {
-      this.checkInData.maxDayReached = dayNumber;
+    if (!this.checkInData.checkedRegions[dayNumber].includes(regionNumber)) {
+      this.checkInData.checkedRegions[dayNumber].push(regionNumber);
+      this.checkInData.checkedRegions[dayNumber].sort((a, b) => a - b);
+      console.log(`Added region ${regionNumber} to day ${dayNumber} checked regions`);
     }
-    
-    // Recalculate current streak
-    this.checkInData.currentStreakDays = this.calculateCurrentStreak(this.checkInData.checkIns);
     
     // Update currentWay in checkInData
     this.checkInData.currentWay = this.currentWay;
     
     // Save to localStorage
     this.saveCheckInData();
-    
-    // Update max day display
-    this.updateMaxDayDisplay();
   }
   
-  // Remove a region from check-in data
+  // Remove a region from checked regions
   removeRegionFromCheckIn(regionNumber) {
-    // Find which check-in contains this region
-    for (let checkIn of this.checkInData.checkIns) {
-      const index = checkIn.regions.indexOf(regionNumber);
+    // Find which day this region belongs to
+    const dayNumber = this.findDayForRegion(regionNumber);
+    
+    // Remove from checkedRegions (visual state only, doesn't affect completion)
+    if (this.checkInData.checkedRegions[dayNumber]) {
+      const index = this.checkInData.checkedRegions[dayNumber].indexOf(regionNumber);
       if (index !== -1) {
-        checkIn.regions.splice(index, 1);
-        console.log(`Removed region ${regionNumber} from day ${checkIn.dayNumber} check-in`);
+        this.checkInData.checkedRegions[dayNumber].splice(index, 1);
+        console.log(`Removed region ${regionNumber} from day ${dayNumber} checked regions`);
         
-        // If no regions left in this check-in, remove the entire check-in
-        if (checkIn.regions.length === 0) {
-          const checkInIndex = this.checkInData.checkIns.indexOf(checkIn);
-          this.checkInData.checkIns.splice(checkInIndex, 1);
-          console.log(`Removed empty check-in for day ${checkIn.dayNumber}`);
+        // Clean up empty arrays (optional, keeps data structure clean)
+        if (this.checkInData.checkedRegions[dayNumber].length === 0) {
+          delete this.checkInData.checkedRegions[dayNumber];
         }
-        break;
       }
     }
     
@@ -271,14 +241,15 @@ class BrainSelector {
   // Get all regions that have been unlocked by previous check-ins
   getAllUnlockedRegions() {
     const unlockedRegions = new Set();
-    this.checkInData.checkIns.forEach(checkIn => {
-      if (checkIn.regions && Array.isArray(checkIn.regions)) {
-        checkIn.regions.forEach(region => unlockedRegions.add(region));
-      } else if (checkIn.region) {
-        // Handle old format where single region was stored
-        unlockedRegions.add(checkIn.region);
+    
+    // Iterate through checkedRegions to get all checked regions
+    for (const dayNumber in this.checkInData.checkedRegions) {
+      const regions = this.checkInData.checkedRegions[dayNumber];
+      if (Array.isArray(regions)) {
+        regions.forEach(region => unlockedRegions.add(region));
       }
-    });
+    }
+    
     return Array.from(unlockedRegions);
   }
 
@@ -330,22 +301,47 @@ class BrainSelector {
       if (saved) {
         const loadedData = JSON.parse(saved);
         
-        // Handle migration from old format to new format
-        if (loadedData.checkIns && loadedData.checkIns.length > 0) {
-          const firstCheckIn = loadedData.checkIns[0];
+        // Migration from old format (checkIns array) to new format (completedDays + checkedRegions)
+        if (loadedData.checkIns && !loadedData.completedDays) {
+          console.log('Migrating from old checkIns format to new completedDays + checkedRegions format');
           
-          // Old format: {region: number, timestamp: string}
-          // New format: {dayNumber: number, regions: [], timestamp: string, way: number}
-          if (firstCheckIn.region && !firstCheckIn.regions) {
-            // Migrate old format: assume 90-day way (1 region per day)
-            loadedData.checkIns = loadedData.checkIns.map((checkIn, index) => ({
-              dayNumber: index + 1,
-              regions: [checkIn.region],
-              timestamp: checkIn.timestamp,
-              way: 90 // Old format was 1 region per day
-            }));
-            loadedData.currentWay = 90;
+          // Initialize new structure
+          loadedData.completedDays = [];
+          loadedData.checkedRegions = {};
+          
+          // Process old checkIns array
+          if (Array.isArray(loadedData.checkIns)) {
+            loadedData.checkIns.forEach(checkIn => {
+              // Extract day number
+              const dayNumber = checkIn.dayNumber;
+              
+              // Assume all check-ins in old format were button-based completions
+              if (!loadedData.completedDays.includes(dayNumber)) {
+                loadedData.completedDays.push(dayNumber);
+              }
+              
+              // Migrate regions to checkedRegions
+              if (checkIn.regions && Array.isArray(checkIn.regions)) {
+                loadedData.checkedRegions[dayNumber] = [...checkIn.regions];
+              }
+            });
+            
+            // Sort completedDays
+            loadedData.completedDays.sort((a, b) => a - b);
           }
+          
+          // Remove old checkIns array
+          delete loadedData.checkIns;
+        }
+        
+        // Ensure completedDays exists
+        if (!loadedData.completedDays) {
+          loadedData.completedDays = [];
+        }
+        
+        // Ensure checkedRegions exists
+        if (!loadedData.checkedRegions) {
+          loadedData.checkedRegions = {};
         }
         
         // Ensure currentWay exists
@@ -355,17 +351,17 @@ class BrainSelector {
         
         // Ensure maxDayReached exists
         if (!loadedData.maxDayReached) {
-          // Calculate max day from existing check-ins
-          const maxDay = loadedData.checkIns.length > 0
-            ? Math.max(...loadedData.checkIns.map(ci => ci.dayNumber))
+          // Calculate max day from completedDays
+          const maxDay = loadedData.completedDays.length > 0
+            ? Math.max(...loadedData.completedDays)
             : 0;
           loadedData.maxDayReached = maxDay;
         }
         
         // Ensure currentStreakDays exists
         if (loadedData.currentStreakDays === undefined) {
-          // Calculate current streak from existing check-ins
-          loadedData.currentStreakDays = this.calculateCurrentStreak(loadedData.checkIns);
+          // Calculate current streak from completedDays
+          loadedData.currentStreakDays = this.calculateCurrentStreak(loadedData.completedDays);
         }
         
         this.checkInData = loadedData;
@@ -377,22 +373,24 @@ class BrainSelector {
       this.checkInData = {
         startDate: null,
         currentWay: 30,
-        checkIns: [],
-        maxDayReached: 0
+        completedDays: [],
+        checkedRegions: {},
+        maxDayReached: 0,
+        currentStreakDays: 0
       };
       this.currentWay = 30;
     }
   }
 
-  // Calculate current streak from check-ins
+  // Calculate current streak from completed days
   // Current streak = number of consecutive days from the highest day backwards
-  calculateCurrentStreak(checkIns) {
-    if (!checkIns || checkIns.length === 0) {
+  calculateCurrentStreak(completedDays) {
+    if (!completedDays || completedDays.length === 0) {
       return 0;
     }
     
-    // Get all unique day numbers and sort them
-    const dayNumbers = [...new Set(checkIns.map(ci => ci.dayNumber))].sort((a, b) => b - a);
+    // Get all unique day numbers and sort them descending
+    const dayNumbers = [...new Set(completedDays)].sort((a, b) => b - a);
     
     if (dayNumbers.length === 0) {
       return 0;
@@ -443,55 +441,44 @@ class BrainSelector {
     const daysSinceStart = this.daysBetween(startDateStr, todayDateStr);
     const expectedDayNumber = daysSinceStart + 1;
     
-    // Get the last check-in day to detect missed days
-    const lastCheckInDayNumber = this.checkInData.checkIns.length > 0
-      ? Math.max(...this.checkInData.checkIns.map(ci => ci.dayNumber))
+    // Get the last completed day
+    const lastCompletedDay = this.checkInData.completedDays.length > 0
+      ? Math.max(...this.checkInData.completedDays)
       : 0;
     
-    // Check if user missed a day (gap between last check-in and expected day)
-    // If expectedDayNumber is more than 1 day ahead of lastCheckInDayNumber, user missed a day
-    if (lastCheckInDayNumber > 0 && expectedDayNumber > lastCheckInDayNumber + 1) {
+    // Check if user missed a day (gap between last completed day and expected day)
+    if (lastCompletedDay > 0 && expectedDayNumber > lastCompletedDay + 1) {
       // User missed a day! Reset progress
-      const missedDays = expectedDayNumber - lastCheckInDayNumber - 1;
+      const missedDays = expectedDayNumber - lastCompletedDay - 1;
       this.resetProgressDueToMissedDay(missedDays);
       return; // Exit early as reset will recalculate
     }
 
     this.currentDayNumber = expectedDayNumber;
 
-    // Check if already checked in today
-    // A day is considered "checked in" if there's a check-in entry for today's day number
-    // and it has at least one region from today's range
-    const todayCheckIn = this.checkInData.checkIns.find(ci => ci.dayNumber === this.currentDayNumber);
-    
-    if (todayCheckIn && todayCheckIn.regions.length > 0) {
-      // Check if any region in the check-in belongs to today's day
-      const todaysRegions = this.getRegionsForDay(this.currentDayNumber, this.currentWay);
-      const hasRegionFromToday = todayCheckIn.regions.some(region => 
-        todaysRegions.includes(region)
-      );
-      this.hasCheckedInToday = hasRegionFromToday;
-    } else {
-      this.hasCheckedInToday = false;
-    }
+    // Check if already checked in today (day is in completedDays)
+    this.hasCheckedInToday = this.checkInData.completedDays.includes(this.currentDayNumber);
   }
 
   // Reset progress when user misses a day
   resetProgressDueToMissedDay(missedDays) {
     // Update max day reached before reset
-    const currentMax = Math.max(...this.checkInData.checkIns.map(ci => ci.dayNumber), 0);
+    const currentMax = this.checkInData.completedDays.length > 0
+      ? Math.max(...this.checkInData.completedDays)
+      : 0;
     if (currentMax > this.checkInData.maxDayReached) {
       this.checkInData.maxDayReached = currentMax;
     }
     
-    // Clear check-ins but keep current way and max day
+    // Clear the data but keep current way and max day
     const currentWay = this.checkInData.currentWay;
     const maxDay = this.checkInData.maxDayReached;
     
     this.checkInData = {
       startDate: null,
       currentWay: currentWay,
-      checkIns: [],
+      completedDays: [],
+      checkedRegions: {},
       maxDayReached: maxDay,
       currentStreakDays: 0
     };
@@ -562,28 +549,24 @@ class BrainSelector {
       return;
     }
 
-    // Check if there's already a check-in for current day (from manual clicks)
-    const existingCheckIn = this.checkInData.checkIns.find(ci => ci.dayNumber === this.currentDayNumber);
-    
-    if (existingCheckIn) {
-      // Merge regions: add any missing regions from regionsToUnlock
-      regionsToUnlock.forEach(region => {
-        if (!existingCheckIn.regions.includes(region)) {
-          existingCheckIn.regions.push(region);
-        }
-      });
-      existingCheckIn.regions.sort((a, b) => a - b);
-      console.log(`Merged check-in button regions with existing day ${this.currentDayNumber} check-in`);
-    } else {
-      // Create new check-in for the current day with UTC timestamp and multiple regions
-      const checkIn = {
-        dayNumber: this.currentDayNumber,
-        regions: regionsToUnlock,
-        timestamp: todayTimestamp,
-        way: this.currentWay
-      };
-      this.checkInData.checkIns.push(checkIn);
+    // Mark this day as completed (permanent)
+    if (!this.checkInData.completedDays.includes(this.currentDayNumber)) {
+      this.checkInData.completedDays.push(this.currentDayNumber);
+      this.checkInData.completedDays.sort((a, b) => a - b);
     }
+    
+    // Add regions to checkedRegions for this day
+    if (!this.checkInData.checkedRegions[this.currentDayNumber]) {
+      this.checkInData.checkedRegions[this.currentDayNumber] = [];
+    }
+    
+    // Merge regions: add any missing regions from regionsToUnlock
+    regionsToUnlock.forEach(region => {
+      if (!this.checkInData.checkedRegions[this.currentDayNumber].includes(region)) {
+        this.checkInData.checkedRegions[this.currentDayNumber].push(region);
+      }
+    });
+    this.checkInData.checkedRegions[this.currentDayNumber].sort((a, b) => a - b);
     
     this.hasCheckedInToday = true;
 
@@ -593,7 +576,7 @@ class BrainSelector {
     }
     
     // Recalculate current streak
-    this.checkInData.currentStreakDays = this.calculateCurrentStreak(this.checkInData.checkIns);
+    this.checkInData.currentStreakDays = this.calculateCurrentStreak(this.checkInData.completedDays);
 
     // Update currentWay in checkInData
     this.checkInData.currentWay = this.currentWay;
@@ -630,7 +613,9 @@ class BrainSelector {
     }
 
     // Update max day reached before reset
-    const currentMax = Math.max(...this.checkInData.checkIns.map(ci => ci.dayNumber), 0);
+    const currentMax = this.checkInData.completedDays.length > 0
+      ? Math.max(...this.checkInData.completedDays)
+      : 0;
     if (currentMax > this.checkInData.maxDayReached) {
       this.checkInData.maxDayReached = currentMax;
     }
@@ -639,7 +624,8 @@ class BrainSelector {
     this.checkInData = {
       startDate: null,
       currentWay: this.currentWay,
-      checkIns: [],
+      completedDays: [],
+      checkedRegions: {},
       maxDayReached: this.checkInData.maxDayReached,
       currentStreakDays: 0
     };

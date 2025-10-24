@@ -98,6 +98,153 @@ Current streak feature is fully implemented:
 - ✅ Current hidden when value is 0
 - ✅ Updates on button check-in
 - ✅ Updates on manual region click
+
+---
+
+## Bug Fix: Separate Check-in Completion from Region Selection (October 24, 2025)
+
+### Bug Description
+**Critical Issue Found:**
+When a user is on day 2 check-in (e.g., 30 days way with regions 1-6 checked), if they uncheck all regions and reload the page:
+- ❌ System incorrectly resets to day 1
+- ❌ Day 2 check-in button becomes enabled again
+- ❌ Acts as if day 2 check-in was never completed
+
+**Root Cause:**
+The system conflated two separate concepts:
+1. **Check-in Completion** (permanent milestone when button is pressed)
+2. **Region Selection State** (toggleable visual state)
+
+When all regions were unchecked, the old implementation deleted the entire check-in record, losing track that the day had been completed.
+
+### Solution: Separation of Concerns
+
+**New Data Structure:**
+```javascript
+checkInData = {
+  startDate: timestamp,
+  currentWay: 30/60/90,
+  completedDays: [1, 2, 3, ...],  // Permanent: days completed via button
+  checkedRegions: {                // Toggleable: currently selected regions
+    1: [1, 2, 3],                 // Day 1: regions checked
+    2: [4, 5, 6]                  // Day 2: regions checked
+  },
+  maxDayReached: number,
+  currentStreakDays: number
+}
+```
+
+**Old Format (Removed):**
+```javascript
+checkIns: [
+  {dayNumber: 1, regions: [1,2,3], timestamp, way},
+  {dayNumber: 2, regions: [4,5,6], timestamp, way}
+]
+```
+
+### Key Changes Implemented
+
+#### 1. Data Structure Migration
+- ✅ Added `completedDays` array for permanent day completion tracking
+- ✅ Added `checkedRegions` object for toggleable region state
+- ✅ Removed `checkIns` array (old format)
+- ✅ Implemented automatic migration from old to new format in `loadCheckInData()`
+
+#### 2. Check-in Button Logic (`checkIn()`)
+- ✅ Adds current day to `completedDays` (permanent)
+- ✅ Adds regions to `checkedRegions[currentDay]` (visual)
+- ✅ Day completion is now permanent and cannot be undone by unchecking
+
+#### 3. Manual Region Click Logic
+- ✅ `handleManualRegionClick()`: Only modifies `checkedRegions`, never affects `completedDays`
+- ✅ `removeRegionFromCheckIn()`: Only removes from `checkedRegions`, preserves completion
+- ✅ Unchecking all regions no longer deletes day completion
+
+#### 4. Day Progress Calculation (`calculateCurrentDay()`)
+- ✅ Uses `completedDays` to determine if today's check-in is done
+- ✅ `hasCheckedInToday = completedDays.includes(currentDayNumber)`
+- ✅ Completely independent of region selection state
+
+#### 5. Visual Application (`applyCheckIns()`)
+- ✅ Uses `checkedRegions` to apply visual selected state
+- ✅ Iterates through `checkedRegions` object to mark regions
+
+#### 6. Unlocked Regions Logic
+- ✅ `getAllUnlockedRegions()`: Uses `checkedRegions` for visual state
+- ✅ `getAllUnlockedRegionsUpToCurrentDay()`: Uses calculated day ranges for clickability
+
+#### 7. Streak Calculation
+- ✅ Updated `calculateCurrentStreak()` to use `completedDays` array
+- ✅ Counts consecutive days from highest completed day backwards
+
+#### 8. Reset Functions
+- ✅ `resetProgressDueToMissedDay()`: Clears both `completedDays` and `checkedRegions`
+- ✅ `resetAllCheckIns()`: Clears both structures completely
+
+### Edge Cases Handled
+
+1. **All Regions Unchecked**
+   - ✅ Day completion remains in `completedDays`
+   - ✅ Button stays disabled with "Day X Achieved"
+   - ✅ Current day number stays correct
+
+2. **Partial Region Unchecking**
+   - ✅ Visual state updates correctly
+   - ✅ Day completion unaffected
+   - ✅ Can toggle any unlocked region freely
+
+3. **Reload After Unchecking**
+   - ✅ Day progress maintained from `completedDays`
+   - ✅ Visual state restored from `checkedRegions`
+   - ✅ Button state correctly reflects completion
+
+4. **Manual Region Click Before Button**
+   - ✅ Adds to `checkedRegions` only
+   - ✅ Does NOT add to `completedDays`
+   - ✅ Button still enabled until pressed
+
+5. **Button Click After Manual Clicks**
+   - ✅ Merges button regions with existing `checkedRegions`
+   - ✅ Adds day to `completedDays`
+   - ✅ Button becomes disabled
+
+6. **Data Migration**
+   - ✅ Old `checkIns` format automatically migrated
+   - ✅ Assumes old check-ins were button completions
+   - ✅ Preserves both completion and visual state
+
+### Testing Scenarios Verified
+
+| Scenario | Expected Behavior | Status |
+|----------|------------------|--------|
+| Day 2 completed, uncheck all regions, reload | Day 2 button stays "Achieved", day stays 2 | ✅ Fixed |
+| Day 2 completed, uncheck some regions | Visual updates, completion preserved | ✅ Fixed |
+| Manually check regions before button press | Regions checked but day not completed | ✅ Fixed |
+| Press button after manual region clicks | Day completed, regions merged | ✅ Fixed |
+| Miss a day with unchecked regions | Reset occurs based on completed days | ✅ Fixed |
+| Old data format loaded | Migrates correctly to new format | ✅ Fixed |
+
+### Files Modified
+- `/Users/sami/Documents/nnn/src/js/main.js`
+  - Updated data structure in constructor
+  - Modified `loadCheckInData()` with migration logic
+  - Updated `checkIn()` to use new structure
+  - Updated `handleManualRegionClick()` for visual state only
+  - Updated `removeRegionFromCheckIn()` to preserve completion
+  - Updated `calculateCurrentDay()` to use `completedDays`
+  - Updated `getAllUnlockedRegions()` to use `checkedRegions`
+  - Updated `calculateCurrentStreak()` to use `completedDays`
+  - Updated all reset functions for new structure
+
+### Current Implementation Status: ✅ COMPLETE
+
+**The bug is now fully fixed:**
+- ✅ Check-in completion is permanent and separate from region selection
+- ✅ Unchecking regions no longer affects day progress
+- ✅ Button state correctly reflects day completion
+- ✅ Current day number stays correct regardless of region state
+- ✅ All edge cases properly handled
+- ✅ Backward compatibility with old data format maintained
 - ✅ Resets on missed day
 - ✅ Resets on fail button
 - ✅ Backward compatible with existing data
