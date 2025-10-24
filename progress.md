@@ -3,12 +3,181 @@
 ## Project Overview
 **Project:** Interactive Brain SVG Selector  
 **Started:** October 18, 2025  
-**Status:** Active Development - Way Dropdown Feature In Progress  
-**Last Updated:** October 22, 2025
+**Status:** Active Development - Gap-Filling for Way Changes  
+**Last Updated:** October 24, 2025
 
 ---
 
-## Current Task: Way Dropdown Feature (October 22, 2025)
+## Current Task: Gap-Filling for Mid-Journey Way Changes (October 24, 2025)
+
+### Issue
+When users change the "way" setting mid-journey (e.g., from 60 days to 30 days), gaps can appear in the unlocked regions sequence.
+
+**Example Scenario:**
+- **Day 1:** User checks in with 60-day way → unlocks regions [1, 2]
+- **Day 2:** User changes to 30-day way before checking in
+  - 30-day Day 2 calculation: regions [4, 5, 6]
+  - **Problem:** Region 3 is skipped, creating a gap!
+  - **Expected:** Should unlock [3, 4, 5, 6] to maintain continuity
+
+### All Possible Way Change Scenarios
+
+| From → To | Day 1 Unlocked | Day 2 Expected | Day 2 With Gap | Needs Gap Fill |
+|-----------|----------------|----------------|----------------|----------------|
+| 60 → 30   | [1, 2]         | [4, 5, 6]      | Missing [3]    | ✓ [3,4,5,6]    |
+| 90 → 30   | [1]            | [4, 5, 6]      | Missing [2,3]  | ✓ [2,3,4,5,6]  |
+| 90 → 60   | [1]            | [3]            | Missing [2]    | ✓ [2,3]        |
+| 30 → 60   | [1, 2, 3]      | [3]            | Overlap OK     | Just [3]       |
+| 30 → 90   | [1, 2, 3]      | [2]            | Overlap OK     | Just [2]       |
+| 60 → 90   | [1, 2]         | [2]            | Overlap OK     | Just [2]       |
+
+### Solution: Continuous Region Unlocking
+
+**Principle:** Never leave gaps in the sequence. Always unlock all regions from the last unlocked region to the current day's maximum region.
+
+**Algorithm:**
+```javascript
+getActualRegionsToUnlock(dayNumber, way) {
+  // 1. Find the highest region from all previous check-ins
+  const lastUnlockedRegion = Math.max(...getAllUnlockedRegions()) || 0;
+  
+  // 2. Calculate today's regions based on current way
+  const calculatedRegions = getRegionsForDay(dayNumber, way);
+  const maxCalculatedRegion = Math.max(...calculatedRegions);
+  
+  // 3. Fill gaps: unlock all regions from lastUnlocked + 1 to maxCalculated
+  const actualRegions = [];
+  for (let i = lastUnlockedRegion + 1; i <= maxCalculatedRegion; i++) {
+    actualRegions.push(i);
+  }
+  
+  return actualRegions; // Continuous range, no gaps!
+}
+```
+
+### Implementation Details
+
+#### 1. New Method: `getActualRegionsToUnlock()`
+- Calculates the continuous range of regions to unlock
+- Fills any gaps caused by way changes
+- Ensures sequential unlocking from last region to current maximum
+
+#### 2. Updated: `setupRegionInteractions()`
+- Uses `getActualRegionsToUnlock()` instead of `getRegionsForDay()`
+- Shows all available regions (including gap-fillers) as white before check-in
+- User can see exactly which regions will be unlocked
+
+#### 3. Updated: `checkIn()`
+- Uses `getActualRegionsToUnlock()` to determine regions
+- Unlocks continuous range including any gap-filling regions
+- Maintains sequential progression regardless of way changes
+
+#### 4. Updated: `updateWaySetting()`
+- Refreshes region interactions immediately when way is changed
+- Shows updated available regions (with gap-filling) in real-time
+- User can preview which regions will be unlocked before checking in
+
+### User Experience
+
+**Before Check-in (Day 2):**
+- Regions 1, 2 are colored (selected from Day 1) ✓
+- Regions 3, 4, 5, 6 are white (unlocked and available for Day 2) ✓
+- User can see the gap-filling region (3) is included
+
+**After Check-in (Day 2):**
+- All regions 1-6 are colored (selected) ✓
+- No gaps in the sequence ✓
+- Continuous progression maintained ✓
+
+**When Changing Ways:**
+- Dropdown updates immediately ✓
+- Available regions update in real-time ✓
+- Gap-filling regions appear as white (available) ✓
+
+### Edge Cases Handled
+
+✓ **Way increase** (30→60, 30→90, 60→90): May create overlaps, handled gracefully  
+✓ **Way decrease** (60→30, 90→30, 90→60): Creates gaps, automatically filled  
+✓ **Multiple way changes**: Each day calculates from last unlocked, always continuous  
+✓ **First day check-in**: No previous regions, starts from region 1  
+✓ **Completion boundary**: Stops at region 90, doesn't exceed maximum  
+
+### Status
+✓ `getActualRegionsToUnlock()` method added  
+✓ `setupRegionInteractions()` updated to use gap-filling  
+✓ `checkIn()` updated to use gap-filling  
+✓ `updateWaySetting()` updated to refresh display  
+⏳ Testing required for all way change scenarios
+
+---
+
+## Previous Task: Bug Fix - Regions Not Showing as Unlocked Before Check-in (October 24, 2025)
+
+### Issue
+**Day 1:** User checked in with 30-day way, unlocking regions 1, 2, 3 ✓  
+**Day 2:** Before checking in, regions 4, 5, 6 are not displaying as white/unlocked. They are properly incrementing and filling when checked in, but the visual "unlocked" state (white fill) is not showing before the check-in button is clicked.
+
+### Root Cause Analysis
+The bug is in the `setupRegionInteractions()` method. It only considers regions from **past check-ins** when determining which regions should have the `.unlocked` class (white fill).
+
+**Current Logic:**
+```javascript
+const unlockedRegions = this.getAllUnlockedRegions(); // Only returns past check-ins
+```
+
+**Problem:** The `getAllUnlockedRegions()` method only returns regions from previous days' check-ins. It doesn't include today's available regions if the user hasn't checked in yet.
+
+**Expected Behavior:**
+- Regions 1, 2, 3 should be colored (selected) from Day 1 check-in ✓
+- Regions 4, 5, 6 should be white (unlocked but not selected) on Day 2 before check-in ✗
+
+### Solution Approach
+Modify `setupRegionInteractions()` to consider BOTH:
+1. **Past check-in regions** (already selected/colored)
+2. **Today's available regions** (unlocked but not yet selected - should be white)
+
+### Implementation
+Updated `setupRegionInteractions()` to:
+1. Get regions from past check-ins: `getAllUnlockedRegions()`
+2. Get today's available regions (if not checked in yet): `getRegionsForDay(currentDayNumber, currentWay)`
+3. Combine both sets to determine all available/clickable regions
+4. Apply `.unlocked` class to all available regions (past + today)
+5. Only regions from past check-ins get `.selected` class (applied in `applyCheckIns()`)
+
+**Updated Code:**
+```javascript
+setupRegionInteractions() {
+  const unlockedRegions = this.getAllUnlockedRegions();
+  
+  // Get regions available for today's check-in (if not checked in yet)
+  const todaysRegions = this.hasCheckedInToday ? [] : this.getRegionsForDay(this.currentDayNumber, this.currentWay);
+  
+  // Combine past unlocked regions with today's available regions
+  const allAvailableRegions = [...new Set([...unlockedRegions, ...todaysRegions])];
+  
+  // Apply unlocked class to all available regions
+  // (selected class is applied separately in applyCheckIns)
+}
+```
+
+### CSS Reference
+```css
+.brain-region.unlocked {
+  fill: #ffffff; /* White fill for unlocked regions */
+}
+
+.brain-region.selected {
+  fill: [color]; /* Colored fill for selected regions */
+}
+```
+
+### Status
+✓ Fixed in `/Users/sami/Documents/nnn/src/js/main.js`  
+⏳ Testing required
+
+---
+
+## Previous Task: Way Dropdown Feature (October 22, 2025)
 
 ### Bug Fix (October 23, 2025)
 **Issue:** 60-day way was only unlocking 1 region on day 1 instead of 2 regions.

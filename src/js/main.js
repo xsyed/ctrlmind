@@ -84,12 +84,19 @@ class BrainSelector {
   setupRegionInteractions() {
     const unlockedRegions = this.getAllUnlockedRegions();
     
+    // Get regions available for today's check-in (if not checked in yet)
+    // This includes gap-filling regions to maintain continuity
+    const todaysRegions = this.hasCheckedInToday ? [] : this.getActualRegionsToUnlock(this.currentDayNumber, this.currentWay);
+    
+    // Combine past unlocked regions with today's available regions
+    const allAvailableRegions = [...new Set([...unlockedRegions, ...todaysRegions])];
+    
     // Update which regions are clickable based on unlocked regions
     for (let i = 1; i <= MAX_REGIONS; i++) {
       const region = this.svg.select(`#region-${i}`);
       
       if (!region.empty()) {
-        if (unlockedRegions.includes(i)) {
+        if (allAvailableRegions.includes(i)) {
           // Unlocked regions - make them clickable
           region
             .style('pointer-events', 'auto')
@@ -154,6 +161,28 @@ class BrainSelector {
       }
     });
     return Array.from(unlockedRegions);
+  }
+
+  // Calculate actual regions to unlock, filling any gaps from way changes
+  getActualRegionsToUnlock(dayNumber, way) {
+    // Get last unlocked region number
+    const allUnlockedRegions = this.getAllUnlockedRegions();
+    const lastUnlockedRegion = allUnlockedRegions.length > 0 ? Math.max(...allUnlockedRegions) : 0;
+    
+    // Calculate today's regions based on current way
+    const calculatedRegions = this.getRegionsForDay(dayNumber, way);
+    const maxCalculatedRegion = Math.max(...calculatedRegions);
+    
+    // Fill gaps: unlock all regions from lastUnlocked + 1 to maxCalculated
+    // This ensures no gaps when user changes ways mid-journey
+    const actualRegionsToUnlock = [];
+    for (let i = lastUnlockedRegion + 1; i <= maxCalculatedRegion; i++) {
+      if (i <= MAX_REGIONS) {
+        actualRegionsToUnlock.push(i);
+      }
+    }
+    
+    return actualRegionsToUnlock;
   }
 
   // Extract local date string (YYYY-MM-DD) from a timestamp or Date object
@@ -286,7 +315,8 @@ class BrainSelector {
     }
 
     // Calculate which regions to unlock based on current day and way
-    const regionsToUnlock = this.getRegionsForDay(this.currentDayNumber, this.currentWay);
+    // This includes gap-filling to handle mid-journey way changes
+    const regionsToUnlock = this.getActualRegionsToUnlock(this.currentDayNumber, this.currentWay);
     
     // Check if any regions exceed the maximum
     const maxRegion = Math.max(...regionsToUnlock);
@@ -514,7 +544,12 @@ class BrainSelector {
     
     console.log('Way setting updated to:', this.currentWay);
     
-    // Note: This only affects future check-ins, not past ones
+    // Refresh region interactions to show updated available regions
+    // This will display any gap-filling regions that need to be unlocked
+    if (this.svg) {
+      this.setupRegionInteractions();
+    }
+    
     // Update button text to show next check-in info
     this.updateCheckInButton();
   }
