@@ -13,7 +13,8 @@ class BrainSelector {
       startDate: null,
       currentWay: 30, // Default to 30 days
       checkIns: [], // Array of {dayNumber, regions: [], timestamp, way}
-      maxDayReached: 0 // Track the highest day reached
+      maxDayReached: 0, // Track the highest day reached
+      currentStreakDays: 0 // Track current consecutive streak
     };
     this.svg = null;
     this.currentDayNumber = 0;
@@ -209,6 +210,9 @@ class BrainSelector {
       this.checkInData.maxDayReached = dayNumber;
     }
     
+    // Recalculate current streak
+    this.checkInData.currentStreakDays = this.calculateCurrentStreak(this.checkInData.checkIns);
+    
     // Update currentWay in checkInData
     this.checkInData.currentWay = this.currentWay;
     
@@ -358,6 +362,12 @@ class BrainSelector {
           loadedData.maxDayReached = maxDay;
         }
         
+        // Ensure currentStreakDays exists
+        if (loadedData.currentStreakDays === undefined) {
+          // Calculate current streak from existing check-ins
+          loadedData.currentStreakDays = this.calculateCurrentStreak(loadedData.checkIns);
+        }
+        
         this.checkInData = loadedData;
         this.currentWay = loadedData.currentWay;
         console.log('Check-in data loaded:', this.checkInData);
@@ -372,6 +382,37 @@ class BrainSelector {
       };
       this.currentWay = 30;
     }
+  }
+
+  // Calculate current streak from check-ins
+  // Current streak = number of consecutive days from the highest day backwards
+  calculateCurrentStreak(checkIns) {
+    if (!checkIns || checkIns.length === 0) {
+      return 0;
+    }
+    
+    // Get all unique day numbers and sort them
+    const dayNumbers = [...new Set(checkIns.map(ci => ci.dayNumber))].sort((a, b) => b - a);
+    
+    if (dayNumbers.length === 0) {
+      return 0;
+    }
+    
+    // Start from the highest day and count consecutive days backwards
+    let streak = 0;
+    let expectedDay = dayNumbers[0];
+    
+    for (const day of dayNumbers) {
+      if (day === expectedDay) {
+        streak++;
+        expectedDay--;
+      } else {
+        // Gap found, stop counting
+        break;
+      }
+    }
+    
+    return streak;
   }
 
   // Save check-in data to localStorage
@@ -451,7 +492,8 @@ class BrainSelector {
       startDate: null,
       currentWay: currentWay,
       checkIns: [],
-      maxDayReached: maxDay
+      maxDayReached: maxDay,
+      currentStreakDays: 0
     };
     this.currentDayNumber = 1;
     this.hasCheckedInToday = false;
@@ -549,6 +591,9 @@ class BrainSelector {
     if (this.currentDayNumber > this.checkInData.maxDayReached) {
       this.checkInData.maxDayReached = this.currentDayNumber;
     }
+    
+    // Recalculate current streak
+    this.checkInData.currentStreakDays = this.calculateCurrentStreak(this.checkInData.checkIns);
 
     // Update currentWay in checkInData
     this.checkInData.currentWay = this.currentWay;
@@ -595,7 +640,8 @@ class BrainSelector {
       startDate: null,
       currentWay: this.currentWay,
       checkIns: [],
-      maxDayReached: this.checkInData.maxDayReached
+      maxDayReached: this.checkInData.maxDayReached,
+      currentStreakDays: 0
     };
     this.currentDayNumber = 1;
     this.hasCheckedInToday = false;
@@ -784,23 +830,36 @@ class BrainSelector {
 
   // Update the max day display
   updateMaxDayDisplay() {
-    // Get or create max day display element
-    let maxDayDisplay = d3.select('#max-day-display');
+    // Get or create streak display element
+    let streakDisplay = d3.select('#streak-display');
     
-    if (maxDayDisplay.empty()) {
+    if (streakDisplay.empty()) {
       // Create the element if it doesn't exist
       const labelContainer = d3.select('.label-container');
-      maxDayDisplay = labelContainer
+      streakDisplay = labelContainer
         .append('div')
-        .attr('id', 'max-day-display')
-        .attr('class', 'max-day-display');
+        .attr('id', 'streak-display')
+        .attr('class', 'streak-display');
+    }
+    
+    // Build the display text
+    let displayParts = [];
+    
+    // Only show current if > 0
+    if (this.checkInData.currentStreakDays > 0) {
+      displayParts.push(`Current: ${this.checkInData.currentStreakDays} day${this.checkInData.currentStreakDays > 1 ? 's' : ''}`);
+    }
+    
+    // Only show max if > 0
+    if (this.checkInData.maxDayReached > 0) {
+      displayParts.push(`Max: ${this.checkInData.maxDayReached} day${this.checkInData.maxDayReached > 1 ? 's' : ''}`);
     }
     
     // Update the text
-    if (this.checkInData.maxDayReached > 0) {
-      maxDayDisplay.text(`Max: ${this.checkInData.maxDayReached} day${this.checkInData.maxDayReached > 1 ? 's' : ''}`);
+    if (displayParts.length > 0) {
+      streakDisplay.text(displayParts.join('  •  '));
     } else {
-      maxDayDisplay.text('');
+      streakDisplay.text('');
     }
   }
 }

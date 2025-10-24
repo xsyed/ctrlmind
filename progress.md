@@ -3,12 +3,117 @@
 ## Project Overview
 **Project:** Interactive Brain SVG Selector  
 **Started:** October 18, 2025  
-**Status:** Active Development - Missed Day Detection & Max Day Tracking  
+**Status:** Active Development - Current Streak Display Feature  
 **Last Updated:** October 24, 2025
 
 ---
 
-## Current Task: Missed Day Detection & Max Day Tracking (October 24, 2025)
+## Current Task: Current Streak Display (October 24, 2025)
+
+### Objective
+Add a "Current" streak counter alongside the existing "Max" streak display that shows:
+1. **Current Streak**: Number of consecutive days achieved from the highest day backwards
+2. Display format: "Current: 2 days  •  Max: 10 days"
+3. Hide "Current" text when value is 0 (no check-ins yet)
+4. Update current streak on each check-in (button or manual click)
+5. Reset current streak to 0 when user misses a day or fails
+
+### Key Differences
+- **Current Streak**: Consecutive days from the highest achieved day backwards (e.g., if checked days 1, 2, 3, 5, 6, current = 2 because days 5-6 are consecutive)
+- **Max Streak**: Highest day number ever reached (e.g., if reached day 10 then reset, max = 10)
+- **Current Day Number**: The day number user should check in today (based on start date and calendar days)
+
+### Approach Taken
+
+#### Core Components Implemented
+
+1. **Current Streak Calculation** (`calculateCurrentStreak`)
+   - Analyzes check-ins to find consecutive days from highest day backwards
+   - Counts how many days in a row from the top
+   - Example: Days [1, 2, 3, 5, 6, 7] → Current streak = 3 (days 5, 6, 7)
+   - Example: Days [1, 3, 5] → Current streak = 1 (only day 5)
+   - Example: Days [1, 2, 3, 4, 5] → Current streak = 5 (all consecutive)
+
+2. **Data Structure Update**
+   - Added `currentStreakDays` property to `checkInData`
+   - Initialized to 0 for new users
+   - Migrated existing users by calculating from check-ins
+
+3. **Streak Display Update** (`updateMaxDayDisplay` renamed logic)
+   - Changed from showing only "Max" to showing both "Current" and "Max"
+   - Format: "Current: X days  •  Max: Y days"
+   - Conditional display:
+     - If current = 0 and max = 0: Show nothing
+     - If current = 0 and max > 0: Show only "Max: Y days"
+     - If current > 0: Show both with separator
+   - Updated DOM element from `#max-day-display` to `#streak-display`
+
+4. **Streak Updates**
+   - Recalculate current streak after every check-in (button)
+   - Recalculate current streak after manual region click
+   - Reset current streak to 0 on missed day reset
+   - Reset current streak to 0 on fail button press
+
+### Implementation Details
+
+#### Modified Data Structure
+```javascript
+checkInData = {
+  startDate: timestamp,
+  currentWay: 30/60/90,
+  checkIns: [{dayNumber, regions[], timestamp, way}],
+  maxDayReached: number,      // Highest day achieved
+  currentStreakDays: number   // NEW: Current consecutive streak
+}
+```
+
+#### Streak Calculation Logic
+```javascript
+// Example check-ins: days 1, 2, 3, 5, 6, 7
+// Sorted descending: [7, 6, 5, 3, 2, 1]
+// Start from 7, expecting 6, found 6 (streak = 2)
+// Expecting 5, found 5 (streak = 3)
+// Expecting 4, found 3 (gap! stop)
+// Result: current streak = 3
+```
+
+### Steps Completed
+
+1. ✅ Added `currentStreakDays` property to data structure
+2. ✅ Created `calculateCurrentStreak()` method with backward consecutive logic
+3. ✅ Updated `loadCheckInData()` to migrate existing users
+4. ✅ Updated `handleManualRegionClick()` to recalculate current streak
+5. ✅ Updated `checkIn()` to recalculate current streak
+6. ✅ Updated `resetProgressDueToMissedDay()` to reset current streak
+7. ✅ Updated `resetAllCheckIns()` to reset current streak
+8. ✅ Renamed `updateMaxDayDisplay()` to show both current and max
+9. ✅ Updated CSS class from `max-day-display` to `streak-display`
+10. ✅ Added conditional display logic (hide current when 0)
+
+### Current Status: Implementation Complete ✅
+
+Current streak feature is fully implemented:
+- ✅ Current streak calculated correctly (consecutive from top)
+- ✅ Display shows "Current: X days  •  Max: Y days"
+- ✅ Current hidden when value is 0
+- ✅ Updates on button check-in
+- ✅ Updates on manual region click
+- ✅ Resets on missed day
+- ✅ Resets on fail button
+- ✅ Backward compatible with existing data
+
+### Testing Scenarios
+
+1. **First check-in**: Current = 1, Max = 1
+2. **Consecutive days**: Check days 1, 2, 3 → Current = 3, Max = 3
+3. **Gap in middle**: Check days 1, 2, 3, 5, 6 → Current = 2 (days 5-6), Max = 6
+4. **After reset**: Current = 0 (hidden), Max = previous high
+5. **Manual clicks**: Should update current if consecutive from top
+6. **Before any check-in**: Current hidden, Max hidden
+
+---
+
+## Previous Task: Missed Day Detection & Max Day Tracking (October 24, 2025)
 
 ### Objective
 Implement two new features:

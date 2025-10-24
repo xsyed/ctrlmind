@@ -72,8 +72,8 @@ header p {
   user-select: none;
 }
 
-/* Max Day Display */
-.max-day-display {
+/* Streak Display */
+.streak-display {
   text-align: center;
   margin-top: 10px;
   font-size: 0.9rem;
