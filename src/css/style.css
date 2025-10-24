@@ -72,6 +72,16 @@ header p {
   user-select: none;
 }
 
+/* Max Day Display */
+.max-day-display {
+  text-align: center;
+  margin-top: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #666;
+  opacity: 0.8;
+}
+
 .edit-btn {
   background: transparent;
   border: 2px solid #000;

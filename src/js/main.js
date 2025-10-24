@@ -12,7 +12,8 @@ class BrainSelector {
     this.checkInData = {
       startDate: null,
       currentWay: 30, // Default to 30 days
-      checkIns: [] // Array of {dayNumber, regions: [], timestamp, way}
+      checkIns: [], // Array of {dayNumber, regions: [], timestamp, way}
+      maxDayReached: 0 // Track the highest day reached
     };
     this.svg = null;
     this.currentDayNumber = 0;
@@ -42,6 +43,9 @@ class BrainSelector {
       
       // Apply saved check-ins to regions
       this.applyCheckIns();
+      
+      // Update max day display
+      this.updateMaxDayDisplay();
       
       // Set up event listeners
       this.setupEventListeners();
@@ -82,21 +86,15 @@ class BrainSelector {
   }
 
   setupRegionInteractions() {
-    const unlockedRegions = this.getAllUnlockedRegions();
-    
-    // Get regions available for today's check-in (if not checked in yet)
-    // This includes gap-filling regions to maintain continuity
-    const todaysRegions = this.hasCheckedInToday ? [] : this.getActualRegionsToUnlock(this.currentDayNumber, this.currentWay);
-    
-    // Combine past unlocked regions with today's available regions
-    const allAvailableRegions = [...new Set([...unlockedRegions, ...todaysRegions])];
+    // Calculate all regions that should be unlocked up to current day
+    const allUnlockedRegionsUpToToday = this.getAllUnlockedRegionsUpToCurrentDay();
     
     // Update which regions are clickable based on unlocked regions
     for (let i = 1; i <= MAX_REGIONS; i++) {
       const region = this.svg.select(`#region-${i}`);
       
       if (!region.empty()) {
-        if (allAvailableRegions.includes(i)) {
+        if (allUnlockedRegionsUpToToday.includes(i)) {
           // Unlocked regions - make them clickable
           region
             .style('pointer-events', 'auto')
@@ -114,17 +112,134 @@ class BrainSelector {
       }
     }
   }
+  
+  // Get all regions that should be unlocked up to current day
+  getAllUnlockedRegionsUpToCurrentDay() {
+    const unlockedRegions = new Set();
+    
+    // Add all regions from check-ins
+    this.checkInData.checkIns.forEach(checkIn => {
+      if (checkIn.regions && Array.isArray(checkIn.regions)) {
+        checkIn.regions.forEach(region => unlockedRegions.add(region));
+      }
+    });
+    
+    // Also include all regions that SHOULD be available up to current day
+    // This allows users to fill in regions from previous days or current day
+    for (let day = 1; day <= this.currentDayNumber; day++) {
+      const regionsForDay = this.getRegionsForDay(day, this.currentWay);
+      regionsForDay.forEach(region => unlockedRegions.add(region));
+    }
+    
+    return Array.from(unlockedRegions).sort((a, b) => a - b);
+  }
 
-  // Toggle a region's selection state
+  // Handle manual region click (counts as check-in for that region's day)
   toggleRegion(regionNumber) {
     const regionId = `#region-${regionNumber}`;
     const region = this.svg.select(regionId);
     
     if (!region.empty()) {
       const isSelected = region.classed(SELECTED_CLASS);
-      region.classed(SELECTED_CLASS, !isSelected);
-      console.log(`Region ${regionNumber} toggled to ${!isSelected ? 'selected' : 'unselected'}`);
+      
+      if (isSelected) {
+        // If already selected, unselect it and remove from check-in data
+        region.classed(SELECTED_CLASS, false);
+        this.removeRegionFromCheckIn(regionNumber);
+        console.log(`Region ${regionNumber} unselected`);
+      } else {
+        // If not selected, select it and add to appropriate day's check-in
+        region.classed(SELECTED_CLASS, true);
+        this.handleManualRegionClick(regionNumber);
+        console.log(`Region ${regionNumber} selected and added to check-in`);
+      }
+      
+      // Update check-in status and button state
+      this.calculateCurrentDay();
+      this.updateCheckInButton();
     }
+  }
+  
+  // Find which day a region belongs to based on current way
+  findDayForRegion(regionNumber) {
+    const totalRegions = MAX_REGIONS;
+    const regionsPerDay = totalRegions / this.currentWay;
+    
+    // Calculate which day this region belongs to
+    const dayNumber = Math.ceil(regionNumber / regionsPerDay);
+    return dayNumber;
+  }
+  
+  // Handle manual region click - add to appropriate day's check-in
+  handleManualRegionClick(regionNumber) {
+    // Determine which day this region belongs to
+    const dayNumber = this.findDayForRegion(regionNumber);
+    
+    // Set start date if this is the first check-in
+    if (!this.checkInData.startDate) {
+      this.checkInData.startDate = this.getTodayTimestamp();
+    }
+    
+    // Find if there's already a check-in for this day
+    const existingCheckIn = this.checkInData.checkIns.find(ci => ci.dayNumber === dayNumber);
+    
+    if (existingCheckIn) {
+      // Add region to existing check-in if not already present
+      if (!existingCheckIn.regions.includes(regionNumber)) {
+        existingCheckIn.regions.push(regionNumber);
+        existingCheckIn.regions.sort((a, b) => a - b); // Keep sorted
+        console.log(`Added region ${regionNumber} to existing day ${dayNumber} check-in`);
+      }
+    } else {
+      // Create new check-in for this day
+      const newCheckIn = {
+        dayNumber: dayNumber,
+        regions: [regionNumber],
+        timestamp: this.getTodayTimestamp(),
+        way: this.currentWay
+      };
+      this.checkInData.checkIns.push(newCheckIn);
+      // Sort check-ins by day number
+      this.checkInData.checkIns.sort((a, b) => a.dayNumber - b.dayNumber);
+      console.log(`Created new check-in for day ${dayNumber} with region ${regionNumber}`);
+    }
+    
+    // Update max day reached
+    if (dayNumber > this.checkInData.maxDayReached) {
+      this.checkInData.maxDayReached = dayNumber;
+    }
+    
+    // Update currentWay in checkInData
+    this.checkInData.currentWay = this.currentWay;
+    
+    // Save to localStorage
+    this.saveCheckInData();
+    
+    // Update max day display
+    this.updateMaxDayDisplay();
+  }
+  
+  // Remove a region from check-in data
+  removeRegionFromCheckIn(regionNumber) {
+    // Find which check-in contains this region
+    for (let checkIn of this.checkInData.checkIns) {
+      const index = checkIn.regions.indexOf(regionNumber);
+      if (index !== -1) {
+        checkIn.regions.splice(index, 1);
+        console.log(`Removed region ${regionNumber} from day ${checkIn.dayNumber} check-in`);
+        
+        // If no regions left in this check-in, remove the entire check-in
+        if (checkIn.regions.length === 0) {
+          const checkInIndex = this.checkInData.checkIns.indexOf(checkIn);
+          this.checkInData.checkIns.splice(checkInIndex, 1);
+          console.log(`Removed empty check-in for day ${checkIn.dayNumber}`);
+        }
+        break;
+      }
+    }
+    
+    // Save to localStorage
+    this.saveCheckInData();
   }
 
   // Get current timestamp in UTC (ISO format with seconds precision)
@@ -234,6 +349,15 @@ class BrainSelector {
           loadedData.currentWay = 30; // Default to 30 days
         }
         
+        // Ensure maxDayReached exists
+        if (!loadedData.maxDayReached) {
+          // Calculate max day from existing check-ins
+          const maxDay = loadedData.checkIns.length > 0
+            ? Math.max(...loadedData.checkIns.map(ci => ci.dayNumber))
+            : 0;
+          loadedData.maxDayReached = maxDay;
+        }
+        
         this.checkInData = loadedData;
         this.currentWay = loadedData.currentWay;
         console.log('Check-in data loaded:', this.checkInData);
@@ -243,7 +367,8 @@ class BrainSelector {
       this.checkInData = {
         startDate: null,
         currentWay: 30,
-        checkIns: []
+        checkIns: [],
+        maxDayReached: 0
       };
       this.currentWay = 30;
     }
@@ -275,14 +400,84 @@ class BrainSelector {
     
     // Calculate days since start date (using local dates)
     const daysSinceStart = this.daysBetween(startDateStr, todayDateStr);
-    this.currentDayNumber = daysSinceStart + 1;
+    const expectedDayNumber = daysSinceStart + 1;
+    
+    // Get the last check-in day to detect missed days
+    const lastCheckInDayNumber = this.checkInData.checkIns.length > 0
+      ? Math.max(...this.checkInData.checkIns.map(ci => ci.dayNumber))
+      : 0;
+    
+    // Check if user missed a day (gap between last check-in and expected day)
+    // If expectedDayNumber is more than 1 day ahead of lastCheckInDayNumber, user missed a day
+    if (lastCheckInDayNumber > 0 && expectedDayNumber > lastCheckInDayNumber + 1) {
+      // User missed a day! Reset progress
+      const missedDays = expectedDayNumber - lastCheckInDayNumber - 1;
+      this.resetProgressDueToMissedDay(missedDays);
+      return; // Exit early as reset will recalculate
+    }
 
-    // Check if already checked in today (compare local date strings)
-    const todayCheckIn = this.checkInData.checkIns.find(ci => {
-      const checkInDateStr = this.getLocalDateString(ci.timestamp);
-      return checkInDateStr === todayDateStr;
-    });
-    this.hasCheckedInToday = !!todayCheckIn;
+    this.currentDayNumber = expectedDayNumber;
+
+    // Check if already checked in today
+    // A day is considered "checked in" if there's a check-in entry for today's day number
+    // and it has at least one region from today's range
+    const todayCheckIn = this.checkInData.checkIns.find(ci => ci.dayNumber === this.currentDayNumber);
+    
+    if (todayCheckIn && todayCheckIn.regions.length > 0) {
+      // Check if any region in the check-in belongs to today's day
+      const todaysRegions = this.getRegionsForDay(this.currentDayNumber, this.currentWay);
+      const hasRegionFromToday = todayCheckIn.regions.some(region => 
+        todaysRegions.includes(region)
+      );
+      this.hasCheckedInToday = hasRegionFromToday;
+    } else {
+      this.hasCheckedInToday = false;
+    }
+  }
+
+  // Reset progress when user misses a day
+  resetProgressDueToMissedDay(missedDays) {
+    // Update max day reached before reset
+    const currentMax = Math.max(...this.checkInData.checkIns.map(ci => ci.dayNumber), 0);
+    if (currentMax > this.checkInData.maxDayReached) {
+      this.checkInData.maxDayReached = currentMax;
+    }
+    
+    // Clear check-ins but keep current way and max day
+    const currentWay = this.checkInData.currentWay;
+    const maxDay = this.checkInData.maxDayReached;
+    
+    this.checkInData = {
+      startDate: null,
+      currentWay: currentWay,
+      checkIns: [],
+      maxDayReached: maxDay
+    };
+    this.currentDayNumber = 1;
+    this.hasCheckedInToday = false;
+
+    // Remove selected class from all regions
+    if (this.svg) {
+      this.svg.selectAll('.brain-region')
+        .classed(SELECTED_CLASS, false);
+      
+      // Reset region interactions (all should be disabled now)
+      this.setupRegionInteractions();
+    }
+
+    // Save to localStorage
+    this.saveCheckInData();
+
+    console.log(`Missed ${missedDays} day(s). Progress reset to day 1.`);
+    
+    // Update the button state
+    this.updateCheckInButton();
+    
+    // Update max day display
+    this.updateMaxDayDisplay();
+    
+    // Show alert to user
+    alert(`You missed ${missedDays} day check-in${missedDays > 1 ? 's' : ''}! Your progress has been reset back to Day 1. Stay consistent to build your streak!`);
   }
 
   // Apply saved check-ins to the SVG regions
@@ -325,15 +520,35 @@ class BrainSelector {
       return;
     }
 
-    // Add check-in for the current day with UTC timestamp and multiple regions
-    const checkIn = {
-      dayNumber: this.currentDayNumber,
-      regions: regionsToUnlock,
-      timestamp: todayTimestamp,
-      way: this.currentWay
-    };
-    this.checkInData.checkIns.push(checkIn);
+    // Check if there's already a check-in for current day (from manual clicks)
+    const existingCheckIn = this.checkInData.checkIns.find(ci => ci.dayNumber === this.currentDayNumber);
+    
+    if (existingCheckIn) {
+      // Merge regions: add any missing regions from regionsToUnlock
+      regionsToUnlock.forEach(region => {
+        if (!existingCheckIn.regions.includes(region)) {
+          existingCheckIn.regions.push(region);
+        }
+      });
+      existingCheckIn.regions.sort((a, b) => a - b);
+      console.log(`Merged check-in button regions with existing day ${this.currentDayNumber} check-in`);
+    } else {
+      // Create new check-in for the current day with UTC timestamp and multiple regions
+      const checkIn = {
+        dayNumber: this.currentDayNumber,
+        regions: regionsToUnlock,
+        timestamp: todayTimestamp,
+        way: this.currentWay
+      };
+      this.checkInData.checkIns.push(checkIn);
+    }
+    
     this.hasCheckedInToday = true;
+
+    // Update max day reached
+    if (this.currentDayNumber > this.checkInData.maxDayReached) {
+      this.checkInData.maxDayReached = this.currentDayNumber;
+    }
 
     // Update currentWay in checkInData
     this.checkInData.currentWay = this.currentWay;
@@ -358,6 +573,9 @@ class BrainSelector {
 
     // Update the button state
     this.updateCheckInButton();
+    
+    // Update max day display
+    this.updateMaxDayDisplay();
   }
 
   // Reset all check-ins
@@ -366,11 +584,18 @@ class BrainSelector {
       return;
     }
 
-    // Clear the data but keep current way setting
+    // Update max day reached before reset
+    const currentMax = Math.max(...this.checkInData.checkIns.map(ci => ci.dayNumber), 0);
+    if (currentMax > this.checkInData.maxDayReached) {
+      this.checkInData.maxDayReached = currentMax;
+    }
+
+    // Clear the data but keep current way setting and max day
     this.checkInData = {
       startDate: null,
       currentWay: this.currentWay,
-      checkIns: []
+      checkIns: [],
+      maxDayReached: this.checkInData.maxDayReached
     };
     this.currentDayNumber = 1;
     this.hasCheckedInToday = false;
@@ -384,13 +609,16 @@ class BrainSelector {
       this.setupRegionInteractions();
     }
 
-    // Save to localStorage (preserves way setting)
+    // Save to localStorage (preserves way setting and max day)
     this.saveCheckInData();
 
     console.log('All check-ins reset');
     
     // Update the button state
     this.updateCheckInButton();
+    
+    // Update max day display
+    this.updateMaxDayDisplay();
     
     alert('All check-ins have been reset.');
   }
@@ -552,6 +780,28 @@ class BrainSelector {
     
     // Update button text to show next check-in info
     this.updateCheckInButton();
+  }
+
+  // Update the max day display
+  updateMaxDayDisplay() {
+    // Get or create max day display element
+    let maxDayDisplay = d3.select('#max-day-display');
+    
+    if (maxDayDisplay.empty()) {
+      // Create the element if it doesn't exist
+      const labelContainer = d3.select('.label-container');
+      maxDayDisplay = labelContainer
+        .append('div')
+        .attr('id', 'max-day-display')
+        .attr('class', 'max-day-display');
+    }
+    
+    // Update the text
+    if (this.checkInData.maxDayReached > 0) {
+      maxDayDisplay.text(`Max: ${this.checkInData.maxDayReached} day${this.checkInData.maxDayReached > 1 ? 's' : ''}`);
+    } else {
+      maxDayDisplay.text('');
+    }
   }
 }
 
