@@ -15,7 +15,8 @@ class BrainSelector {
       completedDays: [], // Array of day numbers that were checked in via button (permanent)
       checkedRegions: {}, // Object mapping day -> [regions] that are currently checked (toggleable)
       maxDayReached: 0, // Track the highest day reached
-      currentStreakDays: 0 // Track current consecutive streak
+      currentStreakDays: 0, // Track current consecutive streak
+      lastFailDate: null // Track last date when fail button was clicked
     };
     this.svg = null;
     this.currentDayNumber = 0;
@@ -88,6 +89,21 @@ class BrainSelector {
   }
 
   setupRegionInteractions() {
+    // If user failed today, lock ALL regions (no interactions allowed)
+    if (this.hasFailedToday()) {
+      for (let i = 1; i <= MAX_REGIONS; i++) {
+        const region = this.svg.select(`#region-${i}`);
+        if (!region.empty()) {
+          region
+            .style('pointer-events', 'none')
+            .style('cursor', 'not-allowed')
+            .classed('unlocked', false)
+            .on('click', null);
+        }
+      }
+      return; // Exit early, no regions should be interactive
+    }
+    
     // Calculate all regions that should be unlocked up to current day
     const allUnlockedRegionsUpToToday = this.getAllUnlockedRegionsUpToCurrentDay();
     
@@ -115,6 +131,23 @@ class BrainSelector {
     }
   }
   
+  // Check if user failed today
+  hasFailedToday() {
+    if (!this.checkInData.lastFailDate) {
+      console.log('hasFailedToday: No lastFailDate');
+      return false;
+    }
+    const todayDateStr = this.getLocalDateString();
+    const lastFailDateStr = this.getLocalDateString(this.checkInData.lastFailDate);
+    const failed = lastFailDateStr === todayDateStr;
+    console.log('hasFailedToday check:', {
+      todayDateStr,
+      lastFailDateStr,
+      failed
+    });
+    return failed;
+  }
+  
   // Get all regions that should be unlocked up to current day
   getAllUnlockedRegionsUpToCurrentDay() {
     const unlockedRegions = new Set();
@@ -131,6 +164,12 @@ class BrainSelector {
 
   // Handle manual region click (counts as check-in for that region's day)
   toggleRegion(regionNumber) {
+    // Safety check: If user failed today, don't allow any region interactions
+    if (this.hasFailedToday()) {
+      console.log('Cannot interact with regions - failed today');
+      return;
+    }
+    
     const regionId = `#region-${regionNumber}`;
     const region = this.svg.select(regionId);
     
@@ -378,6 +417,11 @@ class BrainSelector {
           loadedData.currentStreakDays = this.calculateCurrentStreak(loadedData.completedDays);
         }
         
+        // Ensure lastFailDate exists
+        if (!loadedData.lastFailDate) {
+          loadedData.lastFailDate = null;
+        }
+        
         this.checkInData = loadedData;
         this.currentWay = loadedData.currentWay;
         console.log('Check-in data loaded:', this.checkInData);
@@ -390,7 +434,8 @@ class BrainSelector {
         completedDays: [],
         checkedRegions: {},
         maxDayReached: 0,
-        currentStreakDays: 0
+        currentStreakDays: 0,
+        lastFailDate: null
       };
       this.currentWay = 30;
     }
@@ -440,6 +485,18 @@ class BrainSelector {
   // Calculate current day number and check if already checked in today
   calculateCurrentDay() {
     const todayDateStr = this.getLocalDateString(); // Get local date string (YYYY-MM-DD)
+    
+    // Check if user clicked fail today - if so, they cannot check in today
+    if (this.checkInData.lastFailDate) {
+      const lastFailDateStr = this.getLocalDateString(this.checkInData.lastFailDate);
+      if (lastFailDateStr === todayDateStr) {
+        // User failed today, cannot check in
+        this.currentDayNumber = 1;
+        this.hasCheckedInToday = true; // Disable check-in button
+        console.log('User clicked fail today. Check-in disabled for today.');
+        return;
+      }
+    }
     
     // If no start date, this is day 1 (user will check in for day 1)
     if (!this.checkInData.startDate) {
@@ -494,7 +551,8 @@ class BrainSelector {
       completedDays: [],
       checkedRegions: {},
       maxDayReached: maxDay,
-      currentStreakDays: 0
+      currentStreakDays: 0,
+      lastFailDate: null
     };
     this.currentDayNumber = 1;
     this.hasCheckedInToday = false;
@@ -583,6 +641,12 @@ class BrainSelector {
 
   // Check in for today
   checkIn() {
+    // Safety check: If user failed today, don't allow check-in
+    if (this.hasFailedToday()) {
+      console.log('Cannot check in - failed today');
+      return;
+    }
+    
     const todayTimestamp = this.getTodayTimestamp(); // Get UTC timestamp with seconds precision
 
     // Check if already checked in today
@@ -678,6 +742,9 @@ class BrainSelector {
       this.checkInData.maxDayReached = currentMax;
     }
 
+    // Record the date when fail button was clicked
+    const todayTimestamp = this.getTodayTimestamp();
+
     // Clear the data but keep current way setting and max day
     this.checkInData = {
       startDate: null,
@@ -685,10 +752,17 @@ class BrainSelector {
       completedDays: [],
       checkedRegions: {},
       maxDayReached: this.checkInData.maxDayReached,
-      currentStreakDays: 0
+      currentStreakDays: 0,
+      lastFailDate: todayTimestamp // Record today's date
     };
     this.currentDayNumber = 1;
-    this.hasCheckedInToday = false;
+    this.hasCheckedInToday = true; // Disable check-in for today
+    
+    console.log('Reset complete:', {
+      lastFailDate: this.checkInData.lastFailDate,
+      hasCheckedInToday: this.hasCheckedInToday,
+      currentDayNumber: this.currentDayNumber
+    });
 
     // Remove selected class from all regions
     if (this.svg) {
@@ -702,7 +776,7 @@ class BrainSelector {
     // Save to localStorage (preserves way setting and max day)
     this.saveCheckInData();
 
-    console.log('All check-ins reset');
+    console.log('All check-ins reset. Cannot check in again today.');
     
     // Update the button state
     this.updateCheckInButton();
@@ -710,7 +784,7 @@ class BrainSelector {
     // Update max day display
     this.updateMaxDayDisplay();
     
-    alert('All check-ins have been reset.');
+    alert('All check-ins have been reset. You cannot check in again today. Come back tomorrow for a fresh start!');
   }
 
   setupEventListeners() {
@@ -752,17 +826,49 @@ class BrainSelector {
   
   updateCheckInButton() {
     const btn = d3.select('#done-btn');
+    const failBtn = d3.select('#fail-btn');
+    
+    console.log('updateCheckInButton called:', {
+      hasCheckedInToday: this.hasCheckedInToday,
+      hasFailedToday: this.hasFailedToday(),
+      currentDay: this.currentDayNumber
+    });
     
     if (this.hasCheckedInToday) {
-      // Already checked in today - disable button and show achievement
-      btn
-        .property('disabled', true)
-        .text(`Day ${this.currentDayNumber} Achieved`);
+      // Check if user failed today using helper method
+      const failedToday = this.hasFailedToday();
+      
+      if (failedToday) {
+        // User clicked fail today - disable both buttons
+        console.log('Disabling both buttons - user failed today');
+        btn
+          .attr('disabled', 'disabled')
+          .property('disabled', true)
+          .text('Come back tomorrow');
+        failBtn
+          .attr('disabled', 'disabled')
+          .property('disabled', true);
+      } else {
+        // Already checked in today - disable check-in button only, enable fail button
+        console.log('Disabling check-in only - already checked in');
+        btn
+          .attr('disabled', 'disabled')
+          .property('disabled', true)
+          .text(`Day ${this.currentDayNumber} Achieved`);
+        failBtn
+          .attr('disabled', null)
+          .property('disabled', false);
+      }
     } else {
-      // Can check in - enable button and show day number
+      // Can check in - enable both buttons
+      console.log('Enabling both buttons - can check in');
       btn
+        .attr('disabled', null)
         .property('disabled', false)
         .text(`Day ${this.currentDayNumber} Check-in`);
+      failBtn
+        .attr('disabled', null)
+        .property('disabled', false);
     }
   }
 

@@ -3,12 +3,338 @@
 ## Project Overview
 **Project:** Interactive Brain SVG Selector  
 **Started:** October 18, 2025  
-**Status:** Active Development - Dual Check-in Methods  
+**Status:** Active Development - Reset Button Logic Fix  
 **Last Updated:** October 25, 2025
 
 ---
 
-## Current Task: Dual Check-in Methods - Button + Region Click (October 25, 2025)
+## Current Task: Fix Reset Button Logic for Same-Day Fail (October 25, 2025)
+
+### Objective
+Fix the "Fail" button behavior when user clicks it on the same day they checked in. Currently, if a user:
+1. Checks in for the day (via button or region click)
+2. Then clicks the "Fail" button to reset
+3. The fail button resets progress, but both buttons remain enabled
+
+**Expected behavior:** After clicking fail on the same day as check-in, both the "Fail" and "Check-in" buttons should be disabled since the user cannot check in again for that day.
+
+### Problem Analysis
+
+**Current Flow:**
+1. User checks in on Day 1 → `hasCheckedInToday = true`, `completedDays = [1]`
+2. Check-in button disabled, shows "Day 1 Achieved"
+3. User clicks Fail button → `resetAllCheckIns()` is called
+4. Reset clears `completedDays = []` and `checkedRegions = {}`, sets `currentDayNumber = 1`
+5. Sets `hasCheckedInToday = false` 
+6. **PROBLEM:** This enables the check-in button again, but user shouldn't be able to check in for Day 1 again on the same calendar day
+
+**Root Cause:**
+The reset logic doesn't track that the user has already attempted (and failed) a check-in for today's calendar date. It only tracks completed days, not failed days on the same calendar day.
+
+### Solution Approach
+
+**Option 1: Track Failed Days**
+- Add a new array `failedDays` to track calendar dates when user clicked fail
+- When user clicks fail, record today's date
+- In `calculateCurrentDay()`, check if today's date is in failedDays
+- If yes, set `hasCheckedInToday = true` (effectively disabling check-in)
+- This prevents re-checking in on the same calendar day after a fail
+
+**Option 2: Track Last Action Date**
+- Add `lastFailDate` to track when fail button was clicked
+- Compare with current date to determine if check-in should be allowed
+- Simpler than tracking an array of dates
+
+**Chosen Approach:** Option 2 (simpler, cleaner)
+
+### Implementation Plan
+
+1. ✅ Add `lastFailDate` property to `checkInData` structure
+2. ✅ In `resetAllCheckIns()`, record current date when fail is clicked
+3. ✅ In `calculateCurrentDay()`, check if failed today
+4. ✅ If failed today, set `hasCheckedInToday = true` to disable buttons
+5. ✅ Update button state to show appropriate message
+6. ✅ Test edge cases
+
+### Steps Completed
+
+1. ✅ Added `lastFailDate` property to `checkInData` structure in constructor
+2. ✅ Updated `loadCheckInData()` to ensure `lastFailDate` exists (migration for existing users)
+3. ✅ Updated error handling in `loadCheckInData()` to include `lastFailDate`
+4. ✅ Modified `calculateCurrentDay()` to check if user failed today
+5. ✅ If failed today, set `hasCheckedInToday = true` and exit early
+6. ✅ Updated `resetProgressDueToMissedDay()` to clear `lastFailDate`
+7. ✅ Modified `resetAllCheckIns()` to:
+   - Record current timestamp in `lastFailDate`
+   - Set `hasCheckedInToday = true` to disable check-in
+   - Update alert message to inform user they can't check in today
+8. ✅ Created `hasFailedToday()` helper method to check if user failed today
+9. ✅ Enhanced `setupRegionInteractions()` to:
+   - Check if user failed today using `hasFailedToday()`
+   - If failed today, lock ALL regions (make them non-interactive)
+   - Exit early to prevent any region unlocking
+10. ✅ Enhanced `updateCheckInButton()` to:
+    - Use `hasFailedToday()` helper method
+    - If failed today, disable both fail and check-in buttons
+    - Show "Come back tomorrow" message on check-in button
+    - Explicitly disable fail button when failed today
+11. ✅ Added safety check in `toggleRegion()` to prevent region clicks if failed today
+12. ✅ Added safety check in `checkIn()` to prevent button check-in if failed today
+13. ✅ Added CSS styles for `.btn-fail:disabled` to show visual disabled state
+14. ✅ Enhanced `updateCheckInButton()` to use both `.attr()` and `.property()` for reliability
+15. ✅ Added comprehensive console logging for debugging button states
+
+### Implementation Details
+
+**New Helper Method:**
+```javascript
+hasFailedToday() {
+  if (!this.checkInData.lastFailDate) {
+    return false;
+  }
+  const todayDateStr = this.getLocalDateString();
+  const lastFailDateStr = this.getLocalDateString(this.checkInData.lastFailDate);
+  return lastFailDateStr === todayDateStr;
+}
+```
+
+**CSS Addition for Fail Button Disabled State:**
+```css
+.btn-fail:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: #ccc;
+  color: #666;
+  border-color: #999;
+}
+```
+
+This ensures the fail button visually appears disabled (grayed out) when disabled.
+
+**Modified Methods:**
+
+1. **`setupRegionInteractions()`**
+   - **NEW:** Checks `hasFailedToday()` at the beginning
+   - If failed today: Locks ALL regions, exits early
+   - Prevents any region from being clickable or showing as unlocked
+   ```javascript
+   if (this.hasFailedToday()) {
+     // Lock all regions
+     for (let i = 1; i <= MAX_REGIONS; i++) {
+       region.style('pointer-events', 'none')
+             .style('cursor', 'not-allowed')
+             .classed('unlocked', false)
+             .on('click', null);
+     }
+     return; // Exit early
+   }
+   ```
+
+2. **`toggleRegion(regionNumber)`**
+   - **NEW:** Safety check at beginning
+   - If failed today: Log message and return early
+   - Prevents any region toggle operations
+
+3. **`checkIn()`**
+   - **NEW:** Safety check at beginning
+   - If failed today: Log message and return early
+   - Prevents button check-in even if somehow triggered
+
+4. **`updateCheckInButton()`**
+   - Uses `hasFailedToday()` helper instead of inline date comparison
+   - Explicitly sets `failBtn.property('disabled', true)` when failed
+   - Clear separation of three states:
+     - Failed today: Both buttons disabled
+     - Checked in today: Check-in disabled, fail enabled
+     - Not checked in: Both buttons enabled
+
+### Edge Cases Handled
+
+| Case | Behavior | Status |
+|------|----------|--------|
+| **Check in Day 1, then click Fail** | Both buttons disabled, ALL regions locked | ✅ |
+| **Click Fail without checking in** | Both buttons disabled, ALL regions locked | ✅ |
+| **Fail today, reload page** | Buttons stay disabled, regions stay locked | ✅ |
+| **Fail today, try to click region** | Region non-interactive, cursor shows "not-allowed" | ✅ |
+| **Fail today, try button check-in** | Safety check prevents action | ✅ |
+| **Fail today, come back tomorrow** | Buttons re-enabled, regions 1-3 unlocked | ✅ |
+| **Check in, regions visible** | Fail button enabled, regions interactive | ✅ |
+| **Existing users upgrade** | `lastFailDate` added as null, no disruption | ✅ |
+
+### All Possible Scenarios Analyzed
+
+#### Scenario 1: User checks in Day 1, then clicks Fail same day
+**Flow:**
+1. User clicks "Day 1 Check-in" button
+2. Regions 1-3 become selected and visible
+3. Button shows "Day 1 Achieved" (disabled)
+4. Fail button is enabled
+5. User clicks Fail button
+6. **Result:**
+   - `lastFailDate` = today's timestamp
+   - `hasCheckedInToday` = true
+   - Check-in button: "Come back tomorrow" (disabled)
+   - Fail button: Disabled
+   - ALL regions: Locked (not-allowed cursor, no pointer events)
+   - No regions show as "unlocked" class
+7. **Next day:**
+   - `hasFailedToday()` returns false (different date)
+   - Both buttons enabled
+   - Regions 1-3 unlocked and interactive
+
+#### Scenario 2: User opens app Day 1, immediately clicks Fail
+**Flow:**
+1. User opens app fresh (no check-ins yet)
+2. Button shows "Day 1 Check-in" (enabled)
+3. User clicks Fail button immediately
+4. **Result:**
+   - `lastFailDate` = today's timestamp
+   - `hasCheckedInToday` = true
+   - Check-in button: "Come back tomorrow" (disabled)
+   - Fail button: Disabled
+   - ALL regions: Locked
+5. **Next day:**
+   - Fresh start, both buttons enabled
+   - Regions 1-3 unlocked
+
+#### Scenario 3: User fails today, reloads page multiple times
+**Flow:**
+1. User fails today
+2. User reloads page
+3. `loadCheckInData()` loads `lastFailDate` from localStorage
+4. `calculateCurrentDay()` runs, detects fail today
+5. Sets `hasCheckedInToday = true`
+6. **Result:**
+   - State persists across reloads
+   - Both buttons stay disabled
+   - All regions stay locked
+   - Consistent behavior
+
+#### Scenario 4: User checks in Day 1-5, then fails on Day 6
+**Flow:**
+1. User has successfully completed Days 1-5
+2. On Day 6, user clicks Fail
+3. **Result:**
+   - Progress reset to Day 1
+   - `lastFailDate` = today (Day 6 calendar date)
+   - All regions cleared (no selected class)
+   - Both buttons disabled
+   - ALL regions locked (including past regions)
+   - Max day still shows 5
+4. **Tomorrow (Day 7 calendar date):**
+   - `hasFailedToday()` = false (different date)
+   - Fresh start at Day 1
+   - Regions 1-3 unlocked
+
+#### Scenario 5: User checks in Day 1, doesn't click fail
+**Flow:**
+1. User checks in Day 1
+2. Regions 1-3 selected
+3. Button shows "Day 1 Achieved" (disabled)
+4. Fail button is ENABLED
+5. User can still click fail if they want
+6. User closes app without failing
+7. **Next day:**
+   - Can check in for Day 2
+   - Regions 4-6 (30-day way) become available
+
+#### Scenario 6: User tries to hack by manually triggering functions
+**Flow:**
+1. User fails today (both buttons disabled, regions locked)
+2. User opens console and tries `app.checkIn()`
+3. **Result:**
+   - Safety check: `hasFailedToday()` returns true
+   - Function exits early
+   - No check-in processed
+4. User tries `app.toggleRegion(1)`
+5. **Result:**
+   - Safety check: `hasFailedToday()` returns true
+   - Function exits early
+   - No region toggle
+
+### Current Status: ✅ COMPLETE (COMPREHENSIVE)
+
+**New Data Structure:**
+```javascript
+checkInData = {
+  startDate: timestamp,
+  currentWay: 30/60/90,
+  completedDays: [1, 2, 3, ...],
+  checkedRegions: {1: [1,2,3], 2: [4,5,6]},
+  maxDayReached: number,
+  currentStreakDays: number,
+  lastFailDate: timestamp | null  // NEW: tracks when fail was clicked
+}
+```
+
+**Modified Methods:**
+
+1. **`calculateCurrentDay()`**
+   - Checks if `lastFailDate` matches today's date
+   - If yes, sets `hasCheckedInToday = true` (disables check-in)
+   - This check happens BEFORE any other logic
+
+2. **`resetAllCheckIns()`**
+   - Records current timestamp in `lastFailDate`
+   - Sets `hasCheckedInToday = true`
+   - Alert message updated: "You cannot check in again today. Come back tomorrow for a fresh start!"
+
+3. **`updateCheckInButton()`**
+   - Enhanced to detect if user failed today
+   - If failed today: Disables both buttons, shows "Come back tomorrow"
+   - If checked in (not failed): Disables check-in only, shows "Day X Achieved"
+   - If not checked in: Enables both buttons, shows "Day X Check-in"
+
+### Edge Cases Handled
+
+| Case | Behavior | Status |
+|------|----------|--------|
+| **Check in Day 1, then click Fail** | Both buttons disabled, can't check in today | ✅ |
+| **Click Fail without checking in** | Both buttons disabled for today | ✅ |
+| **Fail today, reload page** | Buttons stay disabled | ✅ |
+| **Fail today, come back tomorrow** | Buttons re-enabled, fresh Day 1 | ✅ |
+| **Check in Day 1, wait until tomorrow, click Fail** | Normal fail behavior, can check in tomorrow | ✅ |
+| **Existing users upgrade** | `lastFailDate` added as null, no disruption | ✅ |
+
+### User Flow Examples
+
+**Scenario 1: Same-day fail after check-in**
+1. Morning: User checks in for Day 1 → Button shows "Day 1 Achieved"
+2. Evening: User clicks Fail button
+3. Result: Both buttons disabled, message "Come back tomorrow"
+4. Next day: Buttons re-enabled, starts fresh at Day 1
+
+**Scenario 2: Immediate fail**
+1. User opens app on Day 1 (no check-in yet)
+2. User clicks Fail button (maybe they know they'll fail)
+3. Result: Both buttons disabled for today
+4. Next day: Buttons re-enabled, fresh start
+
+**Scenario 3: Normal fail on different day**
+1. User checks in Day 1, Day 2, Day 3
+2. Day 4: User clicks Fail
+3. Result: Both buttons disabled for Day 4
+4. Next day: Buttons re-enabled, starts Day 1
+
+### Current Status: ✅ COMPLETE (COMPREHENSIVE)
+
+The reset button logic now properly handles ALL scenarios:
+- ✅ Clicking fail after check-in disables both buttons AND locks all regions
+- ✅ Clicking fail before check-in disables both buttons AND locks all regions
+- ✅ User cannot check in again on the same calendar day after failing
+- ✅ User cannot interact with ANY regions after failing
+- ✅ Next day, user gets a fresh start with buttons enabled and appropriate regions unlocked
+- ✅ Fail button itself is disabled after use
+- ✅ Clear messaging: "Come back tomorrow"
+- ✅ Safety checks prevent console hacking
+- ✅ State persists across page reloads
+- ✅ Backward compatible with existing data
+- ✅ All regions show locked state (cursor: not-allowed)
+- ✅ Created reusable `hasFailedToday()` helper method
+
+---
+
+## Previous Task: Dual Check-in Methods - Button + Region Click (October 25, 2025)
 
 ### Objective
 Implement two ways for users to check in for their current day:

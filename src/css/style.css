@@ -428,16 +428,24 @@ header p {
   border-color: #000;
 }
 
+.btn-fail:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: #ccc;
+  color: #666;
+  border-color: #999;
+}
+
 /* Only apply hover on devices that support hover (not touch devices) */
 @media (hover: hover) {
-  .btn-fail:hover {
+  .btn-fail:hover:not(:disabled) {
     color: #ff0000;
     border-color: #ff0000;
   }
 }
 
 /* Active state for touch feedback on mobile */
-.btn-fail:active {
+.btn-fail:active:not(:disabled) {
   color: #ff0000;
   border-color: #ff0000;
 }
