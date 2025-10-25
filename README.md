@@ -2,28 +2,61 @@
 
 A fully interactive brain visualization tool built with D3.js that allows users to select brain regions, view detailed information, and persist their selections across sessions.
 
-![Brain Selector](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Brain Selector](https://img.shields.io/badge/version-2.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 ## ✨ Features
 
+### 🎯 Dual Check-in System (NEW!)
+- **Two ways to check in**: Click the button OR click any region belonging to the current day
+- **Flexible region selection**: Button selects all regions, region click selects only that one
+- **Smart day completion**: Day is marked complete either way, independent of region selection
+- **30/60/90 day journeys**: Choose your commitment level
+
+### 📅 Daily Check-in System
+- **Progressive unlocking**: Unlock 1-3 brain regions per day based on your chosen journey
+- **Streak tracking**: Current and max streak display to keep you motivated
+- **Missed day detection**: Automatic reset if you miss a day (with preserved max streak)
+- **Persistent progress**: All check-ins and selections saved to localStorage
+
+### 🧠 Interactive Brain Visualization
 - **Interactive SVG Brain**: Click on different brain regions to select/deselect them
 - **Visual Feedback**: 
   - Hover effects with color changes
   - Selected regions highlighted in green
+  - Unlocked regions with blue outline
   - Smooth animations and transitions
 - **Smart Tooltips**: Hover over regions to see their name and function
-- **Persistent Storage**: Selections automatically saved to `localStorage` and restored on page reload
-- **Region Legend**: 
-  - View all selected regions in a sidebar
-  - See complete list of brain regions
-  - Quick deselect from the legend
 - **Responsive Design**: Works on desktop, tablet, and mobile devices
-- **Reset Functionality**: Clear all selections with one click
+
+### 📊 Progress Tracking
+- **Current Streak**: Shows consecutive days from highest day backwards
+- **Max Day Reached**: Tracks your personal best
+- **Customizable Label**: Personalize your journey with a custom brain label
+- **Way Selection**: Switch between 30, 60, or 90-day journeys
+
+## 🎮 How to Use
+
+### Method 1: Button Check-in (All Regions)
+1. Open the app daily
+2. Click the "Day X Check-in" button
+3. **Result**: All regions for that day become selected ✅
+4. Perfect for completionists who want to fill all regions
+
+### Method 2: Region Click Check-in (Single Region)
+1. Open the app daily
+2. Click ANY region belonging to the current day
+3. **Result**: Only that region becomes selected, but day is still complete ✅
+4. Perfect for minimalists who want quick check-ins
+
+### Choose Your Journey
+- **30 Days**: 3 regions per day (finish brain in 1 month)
+- **60 Days**: 1.5 regions per day (finish brain in 2 months)
+- **90 Days**: 1 region per day (finish brain in 3 months)
 
 ## 🧩 Brain Regions
 
-The brain model includes 8 major regions:
+The brain model includes 90 numbered regions across major areas:
 
 1. **Frontal Lobe** - Decision making, problem solving, motor control
 2. **Parietal Lobe** - Spatial awareness, touch perception, navigation

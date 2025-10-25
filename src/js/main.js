@@ -137,6 +137,20 @@ class BrainSelector {
     if (!region.empty()) {
       const isSelected = region.classed(SELECTED_CLASS);
       
+      // AUTO CHECK-IN FEATURE: If clicking an unselected region that belongs to current day
+      // and haven't checked in today, automatically mark day as completed
+      // BUT only select the clicked region (not all regions for the day)
+      if (!isSelected && !this.hasCheckedInToday) {
+        const regionDay = this.findDayForRegion(regionNumber);
+        
+        // If this region belongs to current day, mark day as completed
+        if (regionDay === this.currentDayNumber) {
+          console.log(`Auto-check-in triggered: Region ${regionNumber} belongs to current day ${this.currentDayNumber}`);
+          this.markDayAsCompleted(this.currentDayNumber);
+          // Continue with normal toggle to select ONLY this region
+        }
+      }
+      
       if (isSelected) {
         // If already selected, unselect it and remove from check-in data
         region.classed(SELECTED_CLASS, false);
@@ -521,6 +535,50 @@ class BrainSelector {
         region.classed(SELECTED_CLASS, true);
       }
     });
+  }
+
+  // Mark a day as completed (without selecting all regions)
+  // This is used when a user clicks a region belonging to current day
+  markDayAsCompleted(dayNumber) {
+    const todayTimestamp = this.getTodayTimestamp();
+    
+    // If this is the first check-in, set the start date
+    if (!this.checkInData.startDate) {
+      this.checkInData.startDate = todayTimestamp;
+      this.currentDayNumber = 1;
+    }
+    
+    // Add day to completedDays if not already there
+    if (!this.checkInData.completedDays.includes(dayNumber)) {
+      this.checkInData.completedDays.push(dayNumber);
+      this.checkInData.completedDays.sort((a, b) => a - b);
+      console.log(`Day ${dayNumber} marked as completed via region click`);
+    }
+    
+    // Update hasCheckedInToday flag
+    this.hasCheckedInToday = true;
+    
+    // Update max day reached
+    if (dayNumber > this.checkInData.maxDayReached) {
+      this.checkInData.maxDayReached = dayNumber;
+    }
+    
+    // Recalculate current streak
+    this.checkInData.currentStreakDays = this.calculateCurrentStreak(this.checkInData.completedDays);
+    
+    // Update currentWay in checkInData
+    this.checkInData.currentWay = this.currentWay;
+    
+    // Save to localStorage
+    this.saveCheckInData();
+    
+    // Update button state to show "Day X Achieved"
+    this.updateCheckInButton();
+    
+    // Update streak display
+    this.updateMaxDayDisplay();
+    
+    console.log(`Day ${dayNumber} completion processed. Current streak: ${this.checkInData.currentStreakDays}, Max: ${this.checkInData.maxDayReached}`);
   }
 
   // Check in for today
