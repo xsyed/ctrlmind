@@ -266,11 +266,11 @@ header p {
   fill: #ffffff;
 }
 
-.br-1:hover {
+/* .br-1:hover {
   fill: #F1938C;
   stroke: #ff6b6b;
   stroke-width: 3;
-}
+} */
 
 .br-1.selected {
   fill: #F1938C;
@@ -283,11 +283,11 @@ header p {
 }
 
 
-.br-2:hover {
+/* .br-2:hover {
   fill: #5ec1d6;
   stroke: #3fa7bf;
   stroke-width: 3;
-}
+} */
 
 .br-2.selected {
   fill: #5ec1d6;
@@ -299,11 +299,11 @@ header p {
   fill: #5ec1d6;
 }
 
-.br-3:hover {
+/* .br-3:hover {
   fill: #c17398;
   stroke: #aa5383;
   stroke-width: 3;
-}
+} */
 
 .br-3.selected {
   fill: #c17398;
@@ -315,11 +315,11 @@ header p {
   fill: #c17398;
 }
 
-.br-4:hover {
+/* .br-4:hover {
   fill: #EAE33D;
   stroke: #D7BD1F;
   stroke-width: 3;
-}
+} */
 
 .br-4.selected {
   fill: #EAE33D;
@@ -331,11 +331,11 @@ header p {
   fill: #EAE33D;
 }
 
-.br-5:hover {
+/* .br-5:hover {
   fill: #94C45E;
   stroke: #5AA332;
   stroke-width: 3;
-}
+} */
 
 .br-5.selected {
  fill: #94C45E;
@@ -347,11 +347,11 @@ header p {
  fill: #94C45E;
 }
 
-.br-6:hover {
+/* .br-6:hover {
   fill: #EE81A7;
   stroke: #D76096;
   stroke-width: 3;
-}
+} */
 
 .br-6.selected {
   fill: #EE81A7;
@@ -363,11 +363,11 @@ header p {
   fill: #EE81A7;
 }
 
-.br-7:hover {
+/* .br-7:hover {
   fill: #9983BB;
   stroke: #7662A3;
   stroke-width: 3;
-}
+} */
 
 .br-7.selected {
   fill: #9983BB;
