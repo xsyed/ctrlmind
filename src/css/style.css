@@ -1,3 +1,26 @@
+/* ========================================
+   MINIMAL CLEAN DESIGN - FULL SCREEN
+   Light borders, regular fonts, brain-focused
+   ======================================== */
+
+/* CSS Variables */
+:root {
+  --color-black: #1a1a1a;
+  --color-white: #ffffff;
+  --color-gray-light: #f8f9fa;
+  --color-gray-border: #e0e0e0;
+  --color-gray-text: #666666;
+  --color-blue: #4a90e2;
+  --color-green: #5cb85c;
+  --color-red: #d9534f;
+
+  --border-thickness: 1px;
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+}
+
 /* Global Styles */
 * {
   margin: 0;
@@ -5,10 +28,12 @@
   box-sizing: border-box;
 }
 
-body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  min-height: 100vh;
-  color: #333;
+html, body {
+  height: 100vh;
+  overflow: hidden;
+  font-family: var(--font-primary);
+  background: var(--color-white);
+  color: var(--color-black);
   /* Prevent pull-to-refresh and overscroll on mobile */
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
@@ -20,103 +45,107 @@ body {
 }
 
 .container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
   max-width: 1400px;
   margin: 0 auto;
-  padding: 20px 10px;
+  padding: 0;
 }
 
-/* Header */
+/* ========================================
+   HEADER - MINIMAL & COMPACT
+   ======================================== */
 header {
   text-align: center;
-  padding: 20px;
+  padding: 12px 20px 8px;
+  flex-shrink: 0;
+  border-bottom: var(--border-thickness) solid var(--color-gray-border);
 }
 
 header h1 {
-  font-size: 2.5rem;
-  margin-bottom: 10px;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+  font-size: 1.4rem;
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: 2px;
+  color: var(--color-black);
 }
 
 header p {
-  font-size: 1.1rem;
-  opacity: 0.9;
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-regular);
+  color: var(--color-gray-text);
+  opacity: 0.8;
 }
 
-/* Label Container */
+/* ========================================
+   LABEL SECTION - MINIMAL & COMPACT
+   ======================================== */
 .label-container {
   max-width: 600px;
-  margin: 0 auto 30px;
-  padding: 0 20px;
+  margin: 0 auto;
+  padding: 10px 20px;
+  flex-shrink: 0;
+  width: 100%;
 }
 
 .label-display {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  padding: 5px 7px;
-  margin-left: 25%;
-  margin-right: 15%;
-  background: transparent;
-  border: 3px solid #000;
+  gap: 10px;
+  padding: 6px 12px;
   transition: all 0.2s ease;
-  position: relative;
 }
 
 #label-text {
-  color: #000;
-  font-size: 1.1rem;
-  font-weight: 600;
+  color: var(--color-black);
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-medium);
   flex: 1;
   text-align: center;
   user-select: none;
 }
 
-/* Streak Display */
-.streak-display {
-  text-align: center;
-  margin-top: 10px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #666;
-  opacity: 0.8;
-}
-
+/* Edit Button - Minimal */
 .edit-btn {
   background: transparent;
-  border: 2px solid #000;
-  padding: 6px 10px;
+  border: var(--border-thickness) solid var(--color-gray-border);
+  padding: 4px 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
-  color: #000;
+  color: var(--color-gray-text);
+  border-radius: 4px;
 }
 
 /* Only apply hover on devices that support hover (not touch devices) */
 @media (hover: hover) {
   .edit-btn:hover {
-    color: #667eea;
-    border-color: #667eea;
+    border-color: var(--color-blue);
+    color: var(--color-blue);
   }
 }
 
 /* Active state for touch feedback on mobile */
 .edit-btn:active {
-  color: #667eea;
-  border-color: #667eea;
+  border-color: var(--color-blue);
+  color: var(--color-blue);
 }
 
 .edit-btn svg {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
+  stroke-width: 2;
 }
 
+/* Label Edit Section */
 .label-edit {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
+  flex-wrap: wrap;
   animation: slideDown 0.3s ease;
 }
 
@@ -133,126 +162,151 @@ header p {
 
 .label-input {
   flex: 1;
-  padding: 10px 15px;
-  border: 3px solid #000;
-  font-size: 1rem;
-  font-family: inherit;
-  font-weight: 600;
-  background: transparent;
+  min-width: 200px;
+  padding: 6px 12px;
+  border: var(--border-thickness) solid var(--color-gray-border);
+  font-size: 0.875rem;
+  font-family: var(--font-primary);
+  font-weight: var(--font-weight-regular);
+  background: var(--color-white);
   transition: all 0.2s ease;
   outline: none;
+  color: var(--color-black);
+  border-radius: 4px;
 }
 
 .label-input:focus {
-  border-color: #667eea;
+  border-color: var(--color-blue);
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
 }
 
+.label-input::placeholder {
+  color: var(--color-gray-text);
+  font-weight: var(--font-weight-regular);
+}
+
+/* Save Button - Minimal */
 .save-btn {
-  padding: 10px 20px;
-  background: transparent;
-  color: #000;
-  border: 3px solid #000;
-  font-size: 1rem;
-  font-weight: 600;
+  padding: 6px 16px;
+  background: var(--color-white);
+  color: var(--color-black);
+  border: var(--border-thickness) solid var(--color-gray-border);
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-medium);
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+  border-radius: 4px;
 }
 
 /* Only apply hover on devices that support hover (not touch devices) */
 @media (hover: hover) {
   .save-btn:hover {
-    color: #667eea;
-    border-color: #667eea;
+    border-color: var(--color-blue);
+    color: var(--color-blue);
   }
 }
 
 /* Active state for touch feedback on mobile */
 .save-btn:active {
-  color: #667eea;
-  border-color: #667eea;
+  border-color: var(--color-blue);
+  color: var(--color-blue);
 }
 
 /* Way Selector */
 .way-selector {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
 }
 
 .way-label {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #000;
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-black);
   white-space: nowrap;
 }
 
 .way-dropdown {
   flex: 1;
-  padding: 10px 15px;
-  border: 3px solid #000;
-  font-size: 1rem;
-  font-family: inherit;
-  font-weight: 600;
-  background: transparent;
-  color: #000;
+  padding: 6px 12px;
+  border: var(--border-thickness) solid var(--color-gray-border);
+  font-size: 0.875rem;
+  font-family: var(--font-primary);
+  font-weight: var(--font-weight-regular);
+  background: var(--color-white);
+  color: var(--color-black);
   cursor: pointer;
   transition: all 0.2s ease;
   outline: none;
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
   background-repeat: no-repeat;
-  background-position: right 10px center;
-  background-size: 16px;
-  padding-right: 35px;
+  background-position: right 8px center;
+  background-size: 14px;
+  padding-right: 32px;
+  border-radius: 4px;
 }
 
 /* Only apply hover on devices that support hover (not touch devices) */
 @media (hover: hover) {
   .way-dropdown:hover {
-    border-color: #667eea;
+    border-color: var(--color-blue);
   }
 }
 
 /* Active/focus state */
 .way-dropdown:focus,
 .way-dropdown:active {
-  border-color: #667eea;
+  border-color: var(--color-blue);
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
 }
 
-/* Main Content Layout */
+/* ========================================
+   MAIN CONTENT - BRAIN HERO SECTION
+   ======================================== */
 .main-content {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 20px;
-  margin-bottom: 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
 }
 
-/* Brain Container */
 .brain-container {
-  padding: 30px;
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow: hidden;
 }
 
 #brain-svg-container {
   width: 100%;
-  max-width: 600px;
+  max-width: 900px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin: 0 auto;
-  padding: 0px;
 }
 
 #brain-svg-container svg {
   width: 100%;
-  height: auto;
+  height: 100%;
+  max-height: calc(100vh - 260px);
   display: block;
+  object-fit: contain;
 }
 
-/* Brain Region Styles */
+/* ========================================
+   BRAIN REGION STYLES - SUBTLE
+   ======================================== */
 .brain-region {
   fill: #e0e0e0;
   stroke: #333;
@@ -261,17 +315,14 @@ header p {
   transition: all 0.3s ease;
 }
 
-/* Unlocked but unselected regions should be white */
+/* Unlocked but unselected regions */
 .brain-region.unlocked {
   fill: #ffffff;
+  stroke: #333;
+  stroke-width: 2;
 }
 
-/* .br-1:hover {
-  fill: #F1938C;
-  stroke: #ff6b6b;
-  stroke-width: 3;
-} */
-
+/* Selected regions - Colored (keep existing colors) */
 .br-1.selected {
   fill: #F1938C;
   stroke: #E26F6F;
@@ -281,13 +332,6 @@ header p {
 .br-1.selected:hover {
   fill: #F1938C;
 }
-
-
-/* .br-2:hover {
-  fill: #5ec1d6;
-  stroke: #3fa7bf;
-  stroke-width: 3;
-} */
 
 .br-2.selected {
   fill: #5ec1d6;
@@ -299,12 +343,6 @@ header p {
   fill: #5ec1d6;
 }
 
-/* .br-3:hover {
-  fill: #c17398;
-  stroke: #aa5383;
-  stroke-width: 3;
-} */
-
 .br-3.selected {
   fill: #c17398;
   stroke: #aa5383;
@@ -314,12 +352,6 @@ header p {
 .br-3.selected:hover {
   fill: #c17398;
 }
-
-/* .br-4:hover {
-  fill: #EAE33D;
-  stroke: #D7BD1F;
-  stroke-width: 3;
-} */
 
 .br-4.selected {
   fill: #EAE33D;
@@ -331,27 +363,15 @@ header p {
   fill: #EAE33D;
 }
 
-/* .br-5:hover {
-  fill: #94C45E;
-  stroke: #5AA332;
-  stroke-width: 3;
-} */
-
 .br-5.selected {
- fill: #94C45E;
+  fill: #94C45E;
   stroke: #5AA332;
   stroke-width: 3;
 }
 
 .br-5.selected:hover {
- fill: #94C45E;
+  fill: #94C45E;
 }
-
-/* .br-6:hover {
-  fill: #EE81A7;
-  stroke: #D76096;
-  stroke-width: 3;
-} */
 
 .br-6.selected {
   fill: #EE81A7;
@@ -363,12 +383,6 @@ header p {
   fill: #EE81A7;
 }
 
-/* .br-7:hover {
-  fill: #9983BB;
-  stroke: #7662A3;
-  stroke-width: 3;
-} */
-
 .br-7.selected {
   fill: #9983BB;
   stroke: #7662A3;
@@ -379,77 +393,90 @@ header p {
   fill: #9983BB;
 }
 
-/* Controls */
+/* ========================================
+   CONTROLS - MINIMAL BUTTONS
+   ======================================== */
 .controls {
-  margin-top: 50px;
-  width: 100%;
+  margin-top: 30px;
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-around;
+  gap: 12px;
+  justify-content: center;
+  z-index: 10;
 }
 
 .btn {
-  padding: 5px 15px;
-  border: 3px solid #000;
-  font-size: 1.1rem;
-  font-weight: 600;
+  padding: 8px 24px;
+  border: var(--border-thickness) solid var(--color-gray-border);
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-medium);
   cursor: pointer;
-  background: transparent;
-  color: #000;
+  transition: all 0.2s ease;
+  min-width: 100px;
+  border-radius: 6px;
+  background: var(--color-white);
 }
 
+/* Check-in Button - Subtle Green */
 .btn-done {
-  border-color: #000;
+  border-color: var(--color-green);
+  color: var(--color-green);
+  background: rgba(92, 184, 92, 0.05);
 }
 
 .btn-done:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
-  background: #94C45E;
-  color: white;
-  border-color: #5AA332;
+  background: rgba(92, 184, 92, 0.1);
+  color: var(--color-green);
+  border-color: var(--color-green);
 }
 
 /* Only apply hover on devices that support hover (not touch devices) */
 @media (hover: hover) {
   .btn-done:hover:not(:disabled) {
-    color: #5AA332;
-    border-color: #5AA332;
+    background: var(--color-green);
+    color: var(--color-white);
   }
 }
 
 /* Active state for touch feedback on mobile */
 .btn-done:active:not(:disabled) {
-  color: #5AA332;
-  border-color: #5AA332;
+  background: var(--color-green);
+  color: var(--color-white);
 }
 
+/* Fail Button - Subtle Red */
 .btn-fail {
-  border-color: #000;
+  border-color: var(--color-red);
+  color: var(--color-red);
+  background: rgba(217, 83, 79, 0.05);
 }
 
 .btn-fail:disabled {
   opacity: 0.4;
   cursor: not-allowed;
-  background: #ccc;
-  color: #666;
-  border-color: #999;
+  background: #f5f5f5;
+  color: var(--color-gray-text);
+  border-color: var(--color-gray-border);
 }
 
 /* Only apply hover on devices that support hover (not touch devices) */
 @media (hover: hover) {
   .btn-fail:hover:not(:disabled) {
-    color: #ff0000;
-    border-color: #ff0000;
+    background: var(--color-red);
+    color: var(--color-white);
   }
 }
 
 /* Active state for touch feedback on mobile */
 .btn-fail:active:not(:disabled) {
-  color: #ff0000;
-  border-color: #ff0000;
+  background: var(--color-red);
+  color: var(--color-white);
 }
 
+/* ========================================
+   UNUSED STYLES (kept for compatibility)
+   ======================================== */
 .btn-danger {
   background: #f44336;
   color: white;
@@ -468,12 +495,22 @@ header p {
   background: #7b1fa2;
 }
 
+/* Streak Display */
+.streak-display {
+  text-align: center;
+  margin-top: 10px;
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-regular);
+  color: var(--color-gray-text);
+  opacity: 0.8;
+}
+
 /* Legend Panel */
 .legend-panel {
   background: white;
-  padding: 25px;
-  border-radius: 15px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  border: var(--border-thickness) solid var(--color-gray-border);
+  border-radius: 8px;
   max-height: 600px;
   overflow-y: auto;
   transition: all 0.3s ease;
@@ -484,17 +521,19 @@ header p {
 }
 
 .legend-panel h2 {
-  color: #667eea;
+  color: var(--color-blue);
   margin-bottom: 15px;
-  font-size: 1.5rem;
-  border-bottom: 2px solid #667eea;
+  font-size: 1.2rem;
+  font-weight: var(--font-weight-semibold);
+  border-bottom: 2px solid var(--color-gray-border);
   padding-bottom: 10px;
 }
 
 .legend-panel h3 {
-  color: #764ba2;
+  color: var(--color-black);
   margin: 20px 0 10px;
-  font-size: 1.2rem;
+  font-size: 1rem;
+  font-weight: var(--font-weight-medium);
 }
 
 .selected-list {
@@ -503,10 +542,11 @@ header p {
 }
 
 .empty-message {
-  color: #999;
+  color: var(--color-gray-text);
   font-style: italic;
   text-align: center;
   padding: 20px;
+  font-size: 0.875rem;
 }
 
 .selected-item {
@@ -514,7 +554,7 @@ header p {
   color: white;
   padding: 10px 15px;
   margin-bottom: 10px;
-  border-radius: 8px;
+  border-radius: 6px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -534,12 +574,12 @@ header p {
 
 .selected-item .remove-btn {
   background: rgba(255, 255, 255, 0.2);
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   color: white;
-  padding: 5px 10px;
-  border-radius: 5px;
+  padding: 4px 8px;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   transition: background 0.2s ease;
 }
 
@@ -554,16 +594,16 @@ header p {
 .regions-list li {
   padding: 8px 12px;
   margin-bottom: 5px;
-  background: #f5f5f5;
-  border-radius: 6px;
-  border-left: 4px solid #667eea;
-  font-size: 0.9rem;
+  background: var(--color-gray-light);
+  border-radius: 4px;
+  border-left: 3px solid var(--color-blue);
+  font-size: 0.875rem;
   transition: all 0.2s ease;
 }
 
 .regions-list li:hover {
-  background: #e8eaf6;
-  transform: translateX(5px);
+  background: #e8f0fe;
+  transform: translateX(3px);
 }
 
 /* Custom Tooltip */
@@ -571,13 +611,14 @@ header p {
   position: absolute;
   background: rgba(0, 0, 0, 0.9);
   color: white;
-  padding: 10px 15px;
-  border-radius: 8px;
-  font-size: 0.9rem;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
   pointer-events: none;
   z-index: 1000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   max-width: 250px;
+  font-weight: var(--font-weight-regular);
 }
 
 .tooltip::before {
@@ -586,13 +627,14 @@ header p {
   top: 100%;
   left: 50%;
   transform: translateX(-50%);
-  border: 6px solid transparent;
+  border: 5px solid transparent;
   border-top-color: rgba(0, 0, 0, 0.9);
 }
 
 .tooltip h4 {
-  margin: 0 0 5px;
-  font-size: 1rem;
+  margin: 0 0 4px;
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-semibold);
   color: #ffd700;
 }
 
@@ -604,15 +646,16 @@ header p {
 /* Footer */
 footer {
   text-align: center;
-  color: white;
-  padding: 20px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 15px;
-  font-size: 0.9rem;
+  color: var(--color-gray-text);
+  padding: 15px;
+  border-top: var(--border-thickness) solid var(--color-gray-border);
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-regular);
 }
 
-/* Responsive Design */
+/* ========================================
+   RESPONSIVE DESIGN - MOBILE
+   ======================================== */
 @media (max-width: 1024px) {
   .main-content {
     grid-template-columns: 1fr;
@@ -624,153 +667,117 @@ footer {
 }
 
 @media (max-width: 768px) {
-  /* Prevent all scrolling on mobile */
-  html, body {
-    overflow: hidden;
-    height: 100vh;
-    position: fixed;
-    width: 100%;
+  header {
+    padding: 10px 15px 6px;
   }
 
   header h1 {
-    font-size: 2rem;
+    font-size: 1.2rem;
   }
 
-  .container {
-    padding: 10px 10px;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    overflow: hidden;
+  header p {
+    font-size: 0.7rem;
   }
 
-  /* Label Container Mobile Styles */
   .label-container {
-    margin: 10px auto 20px;
-    padding: 0 10px;
+    padding: 8px 15px;
   }
 
   .label-display {
-    border: 0px;
-    padding: 0;
-    margin: 0;
+    padding: 4px 8px;
+    gap: 8px;
   }
 
   #label-text {
-    font-size: 1.1rem;
+    font-size: 0.8rem;
   }
 
   .edit-btn {
-    padding: 5px 8px;
-    border: 0px;
+    padding: 3px 6px;
   }
 
   .edit-btn svg {
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
   }
 
   .label-edit {
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
   }
 
   .label-input {
     width: 100%;
-    padding: 10px 12px;
-    font-size: 0.9rem;
+    padding: 6px 10px;
+    font-size: 0.8rem;
   }
 
   .save-btn {
     width: 100%;
-    padding: 12px 20px;
-    font-size: 0.9rem;
+    padding: 8px 16px;
+    font-size: 0.8rem;
   }
 
   /* Way Selector Mobile */
   .way-selector {
-    margin-top: 8px;
-    padding-top: 8px;
-    gap: 8px;
+    margin-top: 6px;
+    padding-top: 6px;
+    gap: 6px;
   }
 
   .way-label {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
   }
 
   .way-dropdown {
-    padding: 10px 12px;
-    padding-right: 35px;
-    font-size: 0.9rem;
-  }
-
-  .main-content {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    overflow: hidden; /* Prevent scrolling on main-content */
+    padding: 6px 10px;
+    padding-right: 32px;
+    font-size: 0.8rem;
   }
 
   .brain-container {
-    padding: 0px !important;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    overflow: hidden; /* Prevent scrolling on brain-container */
+    padding: 10px;
   }
 
   #brain-svg-container {
-    margin: 0 auto;
+    max-width: 100%;
+  }
+
+  #brain-svg-container svg {
+    max-height: calc(100vh - 180px);
   }
 
   .controls {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    margin: 0;
-    padding: 20px;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border-top: 2px solid #e0e0e0;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    align-items: center;
+    margin-top: 20px;
+    gap: 10px;
   }
 
   .btn {
     flex: 1;
-    max-width: 150px;
-    padding: 12px 20px;
+    max-width: 160px;
+    padding: 6px 20px;
     font-size: 0.8rem;
-    /* Enable text selection for buttons */
-    -webkit-user-select: none;
-    user-select: none;
     /* Better touch target */
-    min-height: 48px;
+    min-height: 44px;
     touch-action: manipulation;
+    min-width: 110px;
   }
 }
 
 /* Scrollbar Styling */
 .legend-panel::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 .legend-panel::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
+  background: var(--color-gray-light);
 }
 
 .legend-panel::-webkit-scrollbar-thumb {
-  background: #667eea;
-  border-radius: 10px;
+  background: var(--color-gray-border);
+  border-radius: 3px;
 }
 
 .legend-panel::-webkit-scrollbar-thumb:hover {
-  background: #764ba2;
+  background: #bbb;
 }

@@ -11,7 +11,17 @@
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
   <link rel="manifest" href="/site.webmanifest">
   <title>CtrlMind</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/src/css/style.css">
+  <!-- Privacy-friendly analytics by Plausible -->
+  <script async src="https://plausible.io/js/pa-BFg4qsw7TcbDCqhKhhay0.js"></script>
+  <script>
+    window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+    plausible.init()
+  </script>
+
 </head>
 <body>
   <div class="container">
@@ -34,7 +44,7 @@
       <div class="label-edit" id="label-edit" style="display: none;">
         <input type="text" id="label-input" class="label-input" maxlength="50" placeholder="Working on...">
         <button id="save-label-btn" class="save-btn">Save</button>
-        
+
         <!-- Way Dropdown -->
         <div class="way-selector">
           <label for="way-dropdown" class="way-label">Done in</label>
@@ -51,7 +61,7 @@
       <!-- Brain SVG Container -->
       <div class="brain-container">
         <div id="brain-svg-container"></div>
-        
+
         <!-- Controls -->
         <div class="controls">
           <button id="fail-btn" class="btn btn-fail">Fail</button>
