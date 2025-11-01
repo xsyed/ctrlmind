@@ -1,306 +1,145 @@
-# 🧠 Interactive Brain SVG Selector
+# CtrlMind - Interactive Brain Visualization with Daily Check-ins
 
-A fully interactive brain visualization tool built with D3.js that allows users to select brain regions, view detailed information, and persist their selections across sessions.
+**CtrlMind** is an interactive brain visualization app built with D3.js that implements a daily check-in system for habit tracking. Users can select brain regions across a 30/60/90-day journey, with progress tracked via localStorage.
 
-![Brain Selector](https://img.shields.io/badge/version-2.0.0-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
+## Live demo
 
-## ✨ Features
+You can view the production site here: https://ctrlmind.netlify.app/
 
-### 🎯 Dual Check-in System (NEW!)
-- **Two ways to check in**: Click the button OR click any region belonging to the current day
-- **Flexible region selection**: Button selects all regions, region click selects only that one
-- **Smart day completion**: Day is marked complete either way, independent of region selection
-- **30/60/90 day journeys**: Choose your commitment level
+The app features a unique dual check-in system:
+- **Button check-in**: Selects all regions for the current day
+- **Region click check-in**: Selects individual regions while still completing the day
 
-### 📅 Daily Check-in System
-- **Progressive unlocking**: Unlock 1-3 brain regions per day based on your chosen journey
-- **Streak tracking**: Current and max streak display to keep you motivated
-- **Missed day detection**: Automatic reset if you miss a day (with preserved max streak)
-- **Persistent progress**: All check-ins and selections saved to localStorage
+## Development Commands
 
-### 🧠 Interactive Brain Visualization
-- **Interactive SVG Brain**: Click on different brain regions to select/deselect them
-- **Visual Feedback**: 
-  - Hover effects with color changes
-  - Selected regions highlighted in green
-  - Unlocked regions with blue outline
-  - Smooth animations and transitions
-- **Smart Tooltips**: Hover over regions to see their name and function
-- **Responsive Design**: Works on desktop, tablet, and mobile devices
-
-### 📊 Progress Tracking
-- **Current Streak**: Shows consecutive days from highest day backwards
-- **Max Day Reached**: Tracks your personal best
-- **Customizable Label**: Personalize your journey with a custom brain label
-- **Way Selection**: Switch between 30, 60, or 90-day journeys
-
-## 🎮 How to Use
-
-### Method 1: Button Check-in (All Regions)
-1. Open the app daily
-2. Click the "Day X Check-in" button
-3. **Result**: All regions for that day become selected ✅
-4. Perfect for completionists who want to fill all regions
-
-### Method 2: Region Click Check-in (Single Region)
-1. Open the app daily
-2. Click ANY region belonging to the current day
-3. **Result**: Only that region becomes selected, but day is still complete ✅
-4. Perfect for minimalists who want quick check-ins
-
-### Choose Your Journey
-- **30 Days**: 3 regions per day (finish brain in 1 month)
-- **60 Days**: 1.5 regions per day (finish brain in 2 months)
-- **90 Days**: 1 region per day (finish brain in 3 months)
-
-## 🧩 Brain Regions
-
-The brain model includes 90 numbered regions across major areas:
-
-1. **Frontal Lobe** - Decision making, problem solving, motor control
-2. **Parietal Lobe** - Spatial awareness, touch perception, navigation
-3. **Temporal Lobe** - Hearing, memory formation, language
-4. **Occipital Lobe** - Visual processing, color recognition
-5. **Cerebellum** - Balance, coordination, motor learning
-6. **Brain Stem** - Breathing, heart rate, blood pressure
-7. **Motor Cortex** - Voluntary movement, motor planning
-8. **Prefrontal Cortex** - Executive functions, personality, social behavior
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- Node.js (v16 or higher)
-- npm or yarn
-
-### Installation
-
-1. Clone the repository:
 ```bash
-git clone <repository-url>
-cd nnn
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Start the development server:
-```bash
+# Start development server (opens at http://localhost:3000)
 npm run dev
-```
 
-4. Open your browser to `http://localhost:3000`
-
-### Build for Production
-
-```bash
+# Build for production (outputs to dist/)
 npm run build
+
+# Preview production build
+npm run preview
 ```
 
-The production files will be in the `dist` directory.
+## Architecture
 
-## 📁 Project Structure
+### Core Application Structure
 
-```
-brain-selector/
-│
-├── index.html                  # Main HTML file
-├── package.json               # Dependencies and scripts
-├── vite.config.js            # Vite configuration
-│
-├── src/
-│   ├── assets/
-│   │   └── brain.svg         # Brain SVG with regions
-│   │
-│   ├── css/
-│   │   └── style.css         # All styling
-│   │
-│   ├── js/
-│   │   └── main.js           # Main application logic
-│   │
-│   └── data/
-│       └── regions.json      # Brain regions metadata
-│
-└── README.md
-```
+The application is a single-page app with all logic in `src/js/main.js` (~1000 lines). The `BrainSelector` class manages:
 
-## 🛠️ Technology Stack
+1. **State Management** - All data stored in localStorage with UTC timestamps
+2. **SVG Manipulation** - D3.js for region interactions and visual updates
+3. **Check-in Logic** - Dual system (button vs region click)
+4. **Streak Calculation** - Current streak = consecutive days from highest day backwards
 
-| Technology | Purpose |
-|------------|---------|
-| **HTML5** | Structure and markup |
-| **CSS3** | Styling, animations, responsive design |
-| **JavaScript (ES6+)** | Application logic |
-| **D3.js v7** | SVG manipulation, data binding, transitions |
-| **Vite** | Build tool and dev server |
-| **localStorage API** | Client-side data persistence |
+### Key Data Structure
 
-## 💡 How It Works
-
-### 1. SVG Loading
-The brain SVG is loaded dynamically using the Fetch API and inserted into the DOM. Each region has:
-- Unique `data-region` ID
-- `data-name` attribute for display
-- `.brain-region` class for styling
-
-### 2. Selection Management
-```javascript
-// Selections stored in a Set
-this.selectedRegions = new Set();
-
-// Toggle on click
-toggleRegion(regionId) {
-  if (this.selectedRegions.has(regionId)) {
-    this.selectedRegions.delete(regionId);
-  } else {
-    this.selectedRegions.add(regionId);
-  }
-  this.saveSelections();
-}
-```
-
-### 3. Persistence
-```javascript
-// Save to localStorage
-saveSelections() {
-  const array = Array.from(this.selectedRegions);
-  localStorage.setItem('brain-selected-regions', JSON.stringify(array));
-}
-
-// Load on page load
-loadSelections() {
-  const saved = localStorage.getItem('brain-selected-regions');
-  this.selectedRegions = new Set(JSON.parse(saved));
-}
-```
-
-### 4. D3.js Integration
-```javascript
-// Set up region interactions
-regions
-  .on('click', (event) => this.toggleRegion(event))
-  .on('mouseenter', (event) => this.showTooltip(event))
-  .on('mouseleave', () => this.hideTooltip());
-```
-
-## 💾 Data Storage Format
-
-The application stores check-in data in `localStorage` using UTC timestamps for data integrity and local timezone for display.
-
-### Storage Structure
+All data persists in localStorage as `brain-checkin-data`:
 
 ```javascript
 {
-  "startDate": "2025-10-22T23:15:30.456Z",  // UTC timestamp of first check-in
-  "checkIns": [
-    {
-      "region": 1,                            // Region number (1-90)
-      "timestamp": "2025-10-22T23:15:30.456Z" // UTC timestamp with seconds precision
-    },
-    {
-      "region": 2,
-      "timestamp": "2025-10-23T14:22:45.789Z"
-    }
-  ]
+  startDate: "2025-10-22T23:15:30.456Z",  // UTC timestamp (ISO 8601)
+  currentWay: 30,                          // 30/60/90 day journey
+  completedDays: [1, 2, 3],               // Days marked complete (permanent)
+  checkedRegions: {                        // Toggleable region selections
+    "1": [1, 2, 3],                       // Day -> [region numbers]
+    "2": [4, 5, 6]
+  },
+  maxDayReached: 3,                        // Highest day number achieved
+  currentStreakDays: 3,                    // Consecutive days from max backwards
+  lastFailDate: null                       // UTC timestamp of last fail click
 }
 ```
 
-### Design Principles
+**Critical Design Principles:**
+- **Store in UTC, display in local timezone** - All timestamps use `toISOString()` for storage
+- **Dual completion tracking** - `completedDays` (permanent) vs `checkedRegions` (toggleable)
+- **Fail button lock** - After clicking "Fail", all regions lock until next calendar day
 
-- **Store in UTC**: All timestamps stored in UTC (ISO 8601 format) for consistency across timezones
-- **Display in Local**: Dates displayed to users in their local timezone
-- **Seconds Precision**: Full timestamp including seconds for accurate audit trail
-- **Clean Implementation**: No legacy format support - all data uses ISO timestamps
+### Region Distribution
 
-### Example Data Flow
+- 90 total brain regions (numbered 1-90)
+- Distribution formula: `regionsPerDay = 90 / way`
+  - 30 days = 3 regions/day
+  - 60 days = 1.5 regions/day
+  - 90 days = 1 region/day
+- Region-to-day mapping: `dayNumber = Math.ceil(regionNumber / regionsPerDay)`
 
-1. **User checks in** (at 11:15 PM PST on Oct 22, 2025):
-   - Stored: `"2025-10-23T07:15:30.456Z"` (UTC)
-   - Displayed: "Oct 22, 2025" (local date)
+### Critical Functions
 
-2. **Day calculation**:
-   - Compare local dates extracted from UTC timestamps
-   - Ensures day boundaries respect user's timezone
+**Region Selection Flow:**
+- `setupRegionInteractions()` - Sets up D3 click handlers, locks all regions if failed today
+- `handleRegionClick(regionNumber)` - Determines if click completes day or just toggles region
+- `markDayAsCompleted(dayNumber)` - Adds day to completedDays array (permanent)
+- `handleManualRegionClick(regionNumber)` - Adds region to checkedRegions (toggleable)
 
-## 🎨 Customization
+**Fail Button Behavior:**
+- Sets `lastFailDate` to current UTC timestamp
+- `hasFailedToday()` - Checks if fail was clicked today (compares local dates)
+- Locks ALL regions via `setupRegionInteractions()` - sets `pointer-events: none`
+- Disables both check-in and fail buttons until next calendar day
 
-### Adding New Regions
-
-1. Add a new path to `src/assets/brain.svg`:
-```xml
-<path
-   data-region="new-region-id"
-   data-name="New Region Name"
-   class="brain-region"
-   d="M ..." />
+**Streak Calculation:**
+```javascript
+// Current streak = consecutive days from highest day backwards
+// Example: completedDays = [1, 2, 3, 5, 6] → streak = 2 (days 6, 5)
+calculateCurrentStreak(completedDays)
 ```
 
-2. Add metadata to `src/data/regions.json`:
-```json
-{
-  "id": "new-region-id",
-  "name": "New Region Name",
-  "description": "Function description",
-  "functions": ["Function 1", "Function 2"]
-}
+## File Locations
+
+- **Main application**: `src/js/main.js` (BrainSelector class)
+- **Styles**: `src/css/style.css` (includes mobile-optimized touch styles)
+- **SVG brain**: `public/main.svg` (90 regions with IDs `region-1` through `region-90`)
+- **Region metadata**: `public/regions.json` (region names and descriptions)
+- **Entry point**: `index.html`
+
+## Testing
+
+Comprehensive test scenarios documented in `TESTING_GUIDE.md` covering:
+- Dual check-in methods (button vs region click)
+- All three way settings (30/60/90 days)
+- Fail button locking behavior
+- Region selection/deselection persistence
+- Streak calculation edge cases
+
+Use browser DevTools console to simulate different days:
+```javascript
+// Simulate Day 5 with Days 1-4 completed
+const data = JSON.parse(localStorage.getItem('brain-checkin-data'));
+data.completedDays = [1, 2, 3, 4];
+data.startDate = new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString();
+localStorage.setItem('brain-checkin-data', JSON.stringify(data));
+location.reload();
 ```
 
-### Changing Colors
+## Important Implementation Notes
 
-Edit the CSS in `src/css/style.css`:
-```css
-.brain-region {
-  fill: #e0e0e0;  /* Default color */
-}
+### Date Handling
+- Always use `getTodayTimestamp()` for storage (returns UTC ISO string)
+- Use `getLocalDateString()` for day comparisons (extracts YYYY-MM-DD in local timezone)
+- This ensures timezone-safe day boundary detection
 
-.brain-region.selected {
-  fill: #4CAF50;  /* Selected color */
-}
-```
+### Region Locking States
+Three visual states applied via CSS classes:
+1. **Locked** (default) - Gray, no outline, not-allowed cursor
+2. **Unlocked** - Blue outline, pointer cursor, clickable
+3. **Selected** - Green fill, clickable (can deselect)
 
-## 🧪 Testing
+### Check-in vs Region Selection
+- **completedDays array**: Permanent record, marks day as achieved
+- **checkedRegions object**: Visual state only, toggleable by clicking regions
+- A day can be in completedDays with zero regions in checkedRegions (valid state)
 
-To test the application:
+### Gap Filling on Way Changes
+When user changes way mid-journey, `getActualRegionsToUnlock()` fills gaps to ensure all previous regions are covered based on new distribution.
 
-1. **Click Interaction**: Click various regions to select/deselect
-2. **Hover Tooltips**: Hover over regions to see tooltips
-3. **Persistence**: Select regions, reload the page, verify selections persist
-4. **Reset**: Click "Reset All Selections" to clear everything
-5. **Legend**: Verify selected regions appear in the sidebar
-6. **Responsive**: Test on different screen sizes
 
-## 🐛 Troubleshooting
+## Development Notes
 
-### SVG Not Loading
-- Check that `brain.svg` exists in `src/assets/`
-- Verify the fetch path is correct
-- Check browser console for errors
-
-### Selections Not Persisting
-- Check if localStorage is enabled in your browser
-- Verify no browser extensions are blocking localStorage
-- Check browser console for storage errors
-
-### Tooltip Not Showing
-- Ensure regions have `data-region` and `data-name` attributes
-- Check that tooltip element exists in HTML
-- Verify z-index in CSS
-
-## 📝 License
-
-MIT License - feel free to use this project for educational or commercial purposes.
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📧 Contact
-
-For questions or feedback, please open an issue on GitHub.
-
----
-
-Built with ❤️ using D3.js and modern web technologies
+- D3.js v7 used for all SVG manipulation
+- Vite for build tooling (ES modules)
+- No backend - 100% client-side with localStorage
+- Mobile-optimized with touch event handling and overscroll prevention
