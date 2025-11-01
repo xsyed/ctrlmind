@@ -737,6 +737,7 @@ footer {
 
   .brain-container {
     padding: 10px;
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
   }
 
   #brain-svg-container {
@@ -744,7 +745,7 @@ footer {
   }
 
   #brain-svg-container svg {
-    max-height: calc(100vh - 180px);
+    max-height: calc(100vh - 220px);
   }
 
   .controls {
